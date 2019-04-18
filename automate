@@ -1,0 +1,15 @@
+#!/bin/bash
+
+export CLASSPATH="/tmp/cnv/cnv-project/:/tmp/cnv/cnv-project/pt/ulisboa/tecnico/cnv/instrumentation/"
+
+cd pt/ulisboa/tecnico/cnv/solver/
+# Solver_.class é  a versão que vem no zip original
+java BasicBlockCount ./Solver_.class  ./output
+# Guardo numa pasta diferente para poder manter esse ficheiro como backup e não o reescrever
+# Aqui reescrevo o que já está instrumentalizado, com uma versão anterior.
+cp output/Solver_.class ./Solver.class
+
+cd /tmp/cnv/cnv-project/
+
+java pt/ulisboa/tecnico/cnv/server/WebServer
+

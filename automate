@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export CLASSPATH="/tmp/CNV-2019/:/tmp/CNV-2019/pt/ulisboa/tecnico/cnv/instrumentation/"
+export CLASSPATH="$HOME/CNV-2019/:$HOME/CNV-2019/pt/ulisboa/tecnico/cnv/instrumentation/"
 
 cd pt/ulisboa/tecnico/cnv/solver/
 # Solver_.class é  a versão que vem no zip original
@@ -9,7 +9,7 @@ java BasicBlockCount ./Solver_.class  ./output
 # Aqui reescrevo o que já está instrumentalizado, com uma versão anterior.
 cp output/Solver_.class ./Solver.class
 
-cd /tmp/CNV-2019/
+cd $HOME/CNV-2019/
 
 java pt/ulisboa/tecnico/cnv/server/WebServer
 

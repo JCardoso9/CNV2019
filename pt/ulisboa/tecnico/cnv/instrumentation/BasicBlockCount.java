@@ -43,7 +43,8 @@ public class BasicBlockCount {
 
     try {
       BufferedWriter writer;
-      String str = "Request #" + ThreadLocalStorage.get() + " Params " + ThreadLocalStorage.getParams().toString()
+      
+      String str = "Thread ID: " + threadID + " |  Params: " + ThreadLocalStorage.getParams().toString()
           + " basic blocks " + basicBlockCount;
 
       if (new File("metrics.txt").isFile()) {

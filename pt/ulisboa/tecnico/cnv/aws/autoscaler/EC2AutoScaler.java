@@ -15,7 +15,7 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-
+package pt.ulisboa.tecnico.cnv.aws.autoscaler;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.ec2.model.*;
 import com.amazonaws.services.elasticloadbalancing.model.RegisterInstancesWithLoadBalancerRequest;
@@ -25,6 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import pt.ulisboa.tecnico.cnv.aws.AmazonClient;
+import pt.ulisboa.tecnico.cnv.aws.balancer.*;
+
 
 import static java.lang.Integer.parseInt;
 

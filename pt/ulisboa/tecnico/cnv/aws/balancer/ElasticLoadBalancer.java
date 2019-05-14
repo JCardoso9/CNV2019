@@ -15,7 +15,7 @@
  * express or implied. See the License for the specific language governing
  * permissions and limitations under the License.
  */
-
+package pt.ulisboa.tecnico.cnv.aws.balancer;
 import com.amazonaws.services.ec2.model.*;
 import com.amazonaws.services.elasticloadbalancing.model.*;
 
@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import pt.ulisboa.tecnico.cnv.aws.AmazonClient;
 
 public class ElasticLoadBalancer {
 

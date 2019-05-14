@@ -1,3 +1,4 @@
+package pt.ulisboa.tecnico.cnv.aws;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.auth.AWSStaticCredentialsProvider;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;

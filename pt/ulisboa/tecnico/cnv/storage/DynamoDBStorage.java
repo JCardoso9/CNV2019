@@ -15,10 +15,10 @@ import pt.ulisboa.tecnico.cnv.parser.*;
 
 public class DynamoDBStorage{
 	static AmazonDynamoDB dynamoDB;
-	static DynamoDBMapper mapper;
+	public static DynamoDBMapper mapper;
 	static Map<Long, Request> requestInformation = new HashMap<>();
 
-	private static void init() throws Exception {
+	public static void init() throws Exception {
         /*
          * The ProfileCredentialsProvider will return your [default]
          * credential profile by reading from the credentials file located at

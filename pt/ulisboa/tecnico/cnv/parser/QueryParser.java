@@ -6,11 +6,15 @@ public class QueryParser{
 	private String rawQuery;
 	private Request resultingRequest;
 
-	public QueryParser(String rawQuery){
+	public QueryParser(){
+
+	}
+
+	public Request parseAndGetRequest(String rawQuery){
 		this.rawQuery = rawQuery;
 		parseQuery();
 		resultingRequest = createRequest();
-
+		return resultingRequest;
 	}
 
 	private void parseQuery(){

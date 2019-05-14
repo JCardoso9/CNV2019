@@ -1,8 +1,6 @@
 package pt.ulisboa.tecnico.cnv.parser;
 
 public class Request{
-	private int width;
-	private int height;
 	private int x0;
 	private int x1;
 	private int y0;
@@ -12,10 +10,11 @@ public class Request{
 	private String strategy;
 	private String dataset;
 	private String rawQuery;
+	private long requestId;
+	private double estimatedCost;
 
-	public Request(int w, int h, int x0, int x1, int y0, int y1, int xs, int ys, String strategy, String dataset){
-		this.width = w;
-		this.height = h;
+	public Request(long requestId, int w, int h, int x0, int x1, int y0, int y1, int xs, int ys, String strategy, String dataset){
+		this.requestId = requestId;
 		this.x0 = x0;
 		this.x1 = x1;
 		this.y0 = y0;
@@ -30,13 +29,6 @@ public class Request{
 		this.rawQuery = rawQuery;
 	}
 
-	public int getWidth(){
-		return width;
-	}
-
-	public int getHeight(){
-		return this.height;
-	}
 	public int getX0(){
 		return this.x0;
 	}
@@ -63,6 +55,18 @@ public class Request{
 	}
 	public String getRawQuery(){
 		return this.rawQuery;
+	}
+
+	public long getRequestId(){
+		return this.requestId;
+	}
+
+	public double getEstimatedCost(){
+		return this.estimatedCost;
+	}
+
+	public void setEstimatedCost(Double cost){
+		this.estimatedCost = cost;
 	}
 
 	@Override

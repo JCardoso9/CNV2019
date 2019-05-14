@@ -35,6 +35,8 @@ public class WebServer {
 		final HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
 
 		server.createContext("/climb", new MyHandler());
+		
+		server.createContext("/test", new MyTestHandler());
 
 		// be aware! infinite pool of threads!
 		server.setExecutor(Executors.newCachedThreadPool());
@@ -42,6 +44,19 @@ public class WebServer {
 
 		System.out.println(server.getAddress().toString());
 	}
+	
+	
+	static class MyTestHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange t) throws IOException {
+            String response = "This was the query:" + t.getRequestURI().getQuery() 
+                               + "##";
+            t.sendResponseHeaders(200, response.length());
+            OutputStream os = t.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
+        }
+    	}
 
 	static class MyHandler implements HttpHandler {
 		@Override

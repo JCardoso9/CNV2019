@@ -1,6 +1,7 @@
 #!/bin/bash
 
-export CLASSPATH="/tmp/cnv/cnv-project/:/tmp/cnv/cnv-project/pt/ulisboa/tecnico/cnv/instrumentation/"
+export CLASSPATH="/home/ec2-user/CNV-2019/:/home/ec2-user/CNV-2019/pt/ulisboa/tecnico/cnv/instrumentation/"
+export _JAVA_OPTIONS="-XX:-UseSplitVerifier"
 
 cd pt/ulisboa/tecnico/cnv/solver/
 # Solver_.class é  a versão que vem no zip original
@@ -9,7 +10,8 @@ java BasicBlockCount ./Solver_.class  ./output
 # Aqui reescrevo o que já está instrumentalizado, com uma versão anterior.
 cp output/Solver_.class ./Solver.class
 
-cd /tmp/cnv/cnv-project/
+cd /home/ec2-user/CNV-2019/
+
 
 java pt/ulisboa/tecnico/cnv/server/WebServer
 

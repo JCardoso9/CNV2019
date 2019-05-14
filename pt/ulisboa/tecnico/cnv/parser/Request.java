@@ -10,10 +10,10 @@ public class Request{
 	private String strategy;
 	private String dataset;
 	private String rawQuery;
-	private long requestId;
+	private String requestId;
 	private double estimatedCost;
 
-	public Request(long requestId, int w, int h, int x0, int x1, int y0, int y1, int xs, int ys, String strategy, String dataset){
+	public Request(String requestId, int x0, int x1, int y0, int y1, int xs, int ys, String strategy, String dataset){
 		this.requestId = requestId;
 		this.x0 = x0;
 		this.x1 = x1;
@@ -57,8 +57,12 @@ public class Request{
 		return this.rawQuery;
 	}
 
-	public long getRequestId(){
+	public String getRequestId(){
 		return this.requestId;
+	}
+
+	public void setRequestId(String id){
+		this.requestId = id;
 	}
 
 	public double getEstimatedCost(){

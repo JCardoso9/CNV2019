@@ -34,7 +34,7 @@ public class QueryParser{
 
 	private Request createRequest(){
 		//Maybe add id aswell?
-		Request req = new Request(parseInt(argumentsMap.get("w")),parseInt(argumentsMap.get("h")),parseInt(argumentsMap.get("x0"))
+		Request req = new Request(getRequestId(), parseInt(argumentsMap.get("x0"))
 			,parseInt(argumentsMap.get("x1")),parseInt(argumentsMap.get("y0")),parseInt(argumentsMap.get("y1")),parseInt(argumentsMap.get("xS"))
 			,parseInt(argumentsMap.get("yS")), argumentsMap.get("s"), argumentsMap.get("i"));
 		req.setRawQuery(rawQuery);
@@ -47,5 +47,12 @@ public class QueryParser{
 
 	private int parseInt(String s){
 		return Integer.parseInt(s);
+	}
+
+	private String getRequestId(){
+		if (argumentsMap.get("id") == null){
+			return null;
+		}
+		return argumentsMap.get("id");
 	}
 }

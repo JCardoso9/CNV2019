@@ -10,6 +10,7 @@ import com.amazonaws.services.dynamodbv2.util.TableUtils;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
+import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
 import java.util.*;
 import pt.ulisboa.tecnico.cnv.parser.*;
 
@@ -41,6 +42,7 @@ public class DynamoDBStorage{
 
 	    mapper = new DynamoDBMapper(dynamoDB);
 	    CreateTableRequest createTableRequest = mapper.generateCreateTableRequest(RequestMapping.class);
+        createTableRequest.setProvisionedThroughput(new ProvisionedThroughput(10L, 10L));
 	    TableUtils.createTableIfNotExists(dynamoDB, createTableRequest);
 	    TableUtils.waitUntilActive(dynamoDB, "Requests");
     }	

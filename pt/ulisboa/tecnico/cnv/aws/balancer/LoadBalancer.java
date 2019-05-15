@@ -1,32 +1,22 @@
 package pt.ulisboa.tecnico.cnv.aws.balancer;
 
 
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
-import java.util.concurrent.Executors;
-import java.util.*;
-import java.lang.Math.*;
-
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
-import com.amazonaws.services.ec2.model.Region;
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.profile.ProfileCredentialsProvider;
-import pt.ulisboa.tecnico.cnv.parser.*;
-import pt.ulisboa.tecnico.cnv.storage.*;
-
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.ec2.AmazonEC2;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
+import com.sun.net.httpserver.HttpServer;
+import pt.ulisboa.tecnico.cnv.parser.QueryParser;
+import pt.ulisboa.tecnico.cnv.parser.Request;
+import pt.ulisboa.tecnico.cnv.storage.DynamoDBStorage;
+import pt.ulisboa.tecnico.cnv.storage.RequestMapping;
+
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.*;
+import java.util.concurrent.Executors;
 
 public class LoadBalancer{
 	private static final int balancerPort = 8001;

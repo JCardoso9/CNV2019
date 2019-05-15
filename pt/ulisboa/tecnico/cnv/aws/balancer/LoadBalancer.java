@@ -26,6 +26,7 @@ import pt.ulisboa.tecnico.cnv.storage.*;
 
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBQueryExpression;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
 
 public class LoadBalancer{
@@ -112,18 +113,31 @@ public class LoadBalancer{
 		eav.put(":minYs" , new AttributeValue().withN(GetLimitPoint(intervalAllowed, request.Ys(), false, datasetSize)));
 		eav.put(":maxYs" , new AttributeValue().withN(GetLimitPoint(intervalAllowed, request.Ys(), false, datasetSize)));
 
-		DynamoDBQueryExpression<RequestMapping> query = new DynamoDBQueryExpression<RequestMapping>()
+		/*DynamoDBQueryExpression<RequestMapping> query = new DynamoDBQueryExpression<RequestMapping>()
 				.withKeyConditionExpression("id = :id")
-                .withFilterExpression("Strategy = :strategy"
-                        + " and X0 between :minEntryX0 and :maxEntryX0"
-                        + " and Y0 between :minEntryY0 and :maxEntryY0"
-                        + " and X1 between :minOutX1 and :maxOutX1"
-                        + " and Y1 between :minOutY1 and :maxOutY1"
-                        + " and XS between :minOutXs and :maxOutXs"
-                        + " and YS between :minOutYs and :maxOutYs")
+                .withFilterExpression("strategy = :strategy"
+                		+ " and dataset = :dataset"
+                        + " and x0 between :minEntryX0 and :maxEntryX0"
+                        + " and y0 between :minEntryY0 and :maxEntryY0"
+                        + " and x1 between :minOutX1 and :maxOutX1"
+                        + " and y1 between :minOutY1 and :maxOutY1"
+                        + " and xs between :minXs and :maxXs"
+                        + " and ys between :minYs and :maxYs")
                 .withExpressionAttributeValues(eav);
-        System.out.println(mapper.query(RequestMapping.class, query).toString());
-		return mapper.query(RequestMapping.class, query);
+        System.out.println(mapper.query(RequestMapping.class, query).toString());*/
+
+        DynamoDBScanExpression scanExpression = new DynamoDBScanExpression()
+        		.withFilterExpression("strategy = :strategy"
+                		+ " and dataset = :dataset"
+                        + " and x0 between :minEntryX0 and :maxEntryX0"
+                        + " and y0 between :minEntryY0 and :maxEntryY0"
+                        + " and x1 between :minOutX1 and :maxOutX1"
+                        + " and y1 between :minOutY1 and :maxOutY1"
+                        + " and xs between :minXs and :maxXs"
+                        + " and ys between :minYs and :maxYs")
+                .withExpressionAttributeValues(eav);
+        List<RequestMapping> mapping = mapper.scan(RequestMapping.class, scanExpression);
+		return mapping;
 	}
 
 	static double CalculateWorstCaseDistance(int x0, int x1, int y0, int y1, int xs, int ys){
@@ -138,6 +152,7 @@ public class LoadBalancer{
 		List<RequestMapping> mappingList = QueryDB(request);
 		double metricsAvg = -1;
 		int metricsNumber = 0;
+		System.out.println("Done querying");
 		if (mappingList.size() > 0){
 			System.out.println("Found stuff in database");
 			for (RequestMapping mapping : mappingList){
@@ -160,6 +175,7 @@ public class LoadBalancer{
 			request.setEstimatedCost((metricsAvg/maxMetric)*n);
 		}
 		else{
+			System.out.println("Nothing in db ");
 			//Estimate cost.
 			double mapArea = (request.getX1()-request.getX0())*(request.getY1()-request.getY0());
 			double distanceWorstCase = CalculateWorstCaseDistance(request.getX0(),request.getX1(),request.getY0(),request.getY1(),request.Xs(),request.Ys());

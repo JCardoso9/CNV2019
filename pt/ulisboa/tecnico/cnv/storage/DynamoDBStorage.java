@@ -59,7 +59,6 @@ public class DynamoDBStorage{
     		mappedRequest.setMetric(metric);
     		//Save updated isntance into database
     		mapper.save(mappedRequest);
-
     }	
 
     //Need to store the estimates for new requests aswell.

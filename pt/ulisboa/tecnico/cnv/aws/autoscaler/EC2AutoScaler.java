@@ -18,6 +18,7 @@
 package pt.ulisboa.tecnico.cnv.aws.autoscaler;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.ec2.model.*;
+import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.elasticloadbalancing.model.RegisterInstancesWithLoadBalancerRequest;
 import com.amazonaws.services.elasticloadbalancing.model.RegisterInstancesWithLoadBalancerResult;
 
@@ -27,6 +28,7 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import pt.ulisboa.tecnico.cnv.aws.AmazonClient;
 import pt.ulisboa.tecnico.cnv.aws.balancer.*;
+
 
 
 import static java.lang.Integer.parseInt;
@@ -63,6 +65,7 @@ public class EC2AutoScaler {
         final String securityGroup = properties.getString(SECURITY_GROUP);
         final String keyPairName = properties.getString(KEY_PAIR_NAME);        
         final String loadBalancerName = properties.getString(LOAD_BALANCER_NAME);
+        final Region regionObject = new Region().withRegionName(region);
         int idleTimeout = 0;
 
         try {
@@ -76,8 +79,13 @@ public class EC2AutoScaler {
             idleTimeout = 60;
         }
 
-        AutoScaling.createAutoScaling(region, amiID, securityGroup, keyPairName, loadBalancerName);
-
+        EC2InstanceController.requestNewEC2Instance(AmazonClient.getEC2InstanceForRegion(regionObject));
+        //AutoScaling.createAutoScaling(region, amiID, securityGroup, keyPairName, loadBalancerName
+        try{
+                Thread.sleep(60000);
+            } catch (InterruptedException e) {e.printStackTrace();
+        }
+        EC2InstanceController.shutDownEC2Instance(AmazonClient.getEC2InstanceForRegion(regionObject));
     }
 
     private static void init() throws Exception {

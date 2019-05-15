@@ -11,7 +11,7 @@ public class Request{
 	private String dataset;
 	private String rawQuery;
 	private String requestId;
-	private double estimatedCost;
+	private long estimatedCost;
 
 	public Request(String requestId, int x0, int x1, int y0, int y1, int xs, int ys, String strategy, String dataset){
 		this.requestId = requestId;
@@ -65,11 +65,11 @@ public class Request{
 		this.requestId = id;
 	}
 
-	public double getEstimatedCost(){
+	public long getEstimatedCost(){
 		return this.estimatedCost;
 	}
 
-	public void setEstimatedCost(Double cost){
+	public void setEstimatedCost(long cost){
 		this.estimatedCost = cost;
 	}
 

@@ -4,8 +4,11 @@ import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.*;
 import com.amazonaws.AmazonClientException;
 
+import pt.ulisboa.tecnico.cnv.parser.Request;
+
 import java.util.ResourceBundle;
 import java.util.Locale;
+import java.util.*;
 
 
 
@@ -23,6 +26,8 @@ public class EC2InstanceController{
     private static String KEY_PAIR_NAME = "key_pair_name";
     private static String SECURITY_GROUP = "security_group";
     private static String IDLE_TIMEOUT = "idle_timeout";
+    private static List<Request> requestList = new ArrayList<Request>();
+    private static int currentLoad;
 
     static String ec2InstanceID;
 
@@ -115,5 +120,16 @@ public class EC2InstanceController{
     }
 
 
+    public static void addNewRequest(Request request){
+        requestList.add(request);
+    }
+
+    public static void removeRequest(Request request){
+        requestList.remove(request);
+    }
+
+    public static int getLoad(){
+        return currentLoad;
+    }
 
 }

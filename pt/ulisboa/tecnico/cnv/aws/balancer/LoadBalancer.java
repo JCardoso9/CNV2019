@@ -13,6 +13,7 @@ import pt.ulisboa.tecnico.cnv.parser.QueryParser;
 import pt.ulisboa.tecnico.cnv.parser.Request;
 import pt.ulisboa.tecnico.cnv.storage.DynamoDBStorage;
 import pt.ulisboa.tecnico.cnv.storage.RequestMapping;
+import pt.ulisboa.tecnico.cnv.aws.autoscaler.*;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 
@@ -30,6 +31,14 @@ public class LoadBalancer{
 	private static double largestMapArea = 0;
 	private static double distanceLargestMap = 0;
 	private static int n = 10;
+	private static List<EC2InstanceController> instances = new ArrayList<>();
+	private static final Comparator<EC2InstanceController> instanceComparator = new Comparator<EC2InstanceController>() {
+        @Override
+        public int compare(EC2InstanceController i1, EC2InstanceController i2) {
+        	int smallestLoad = (i1.getLoad() < i2.getLoad()) ? i1.getLoad() : i2.getLoad();
+            return smallestLoad;
+        }
+	};
 
 	/*private LoadBalancer() throws Exception{
 		final HttpServer server = HttpServer.create(new InetSocketAddress(balancerPort), 0);
@@ -54,6 +63,8 @@ public class LoadBalancer{
 		server.start();
 		System.out.println(server.getAddress().toString());
 	}
+
+	
 
 
 	private static String GetLimitPoint(double radius, int point, boolean min, int datasetSize){
@@ -158,7 +169,8 @@ public class LoadBalancer{
 					if (maxMetric < mapping.getMetrics()){
 						maxMetric = mapping.getMetrics();
 					}
-					request.setEstimatedCost((mapping.getMetrics()/maxMetric)*n);
+					long cost = Math.round((mapping.getMetrics()/maxMetric)*n);
+					request.setEstimatedCost(cost);
 					break;
 				}
 				if (maxMetric < mapping.getMetrics()){
@@ -169,7 +181,8 @@ public class LoadBalancer{
 				//Might need some additional checks here.
 			}
 			metricsAvg = metricsAvg/metricsNumber;
-			request.setEstimatedCost((metricsAvg/maxMetric)*n);
+			long cost = Math.round((metricsAvg/maxMetric)*n);
+			request.setEstimatedCost(cost);
 		}
 		else{
 			System.out.println("Nothing in db ");
@@ -177,15 +190,26 @@ public class LoadBalancer{
 			double mapArea = (request.getX1()-request.getX0())*(request.getY1()-request.getY0());
 			double distanceWorstCase = CalculateWorstCaseDistance(request.getX0(),request.getX1(),request.getY0(),request.getY1(),request.Xs(),request.Ys());
 			//This is incorrect and can give values above n, need to rethink formula;
-			request.setEstimatedCost(((distanceWorstCase*mapArea) / (largestMapArea* distanceLargestMap))*n);
-			System.out.println("Cost : " + Double.toString(((distanceWorstCase*mapArea) / (largestMapArea* distanceLargestMap)*n)));
+			long cost = Math.round(((distanceWorstCase*mapArea) / (largestMapArea* distanceLargestMap))*n);
+			request.setEstimatedCost(cost);
+			System.out.println("Cost : " + Long.toString(cost));
 			
 		}
 		return request;
 	}
 
 	static void SelectBestInstance(Request request){
-		//Check, given request complexity and instances workload which instance is better suited.
+		//Also check if instance is bound to be removed
+		Collections.sort(instances, instanceComparator);
+		EC2InstanceController bestInstance = instances.get(0);
+		/* int bestIndex = 0
+		EC2InstanceController bestInstance = instances.get(bestIndex);
+		while (!bestInstance.isAlive()){
+			bestIndex++;
+			bestInstance = instances.get(bestIndex);
+		}*/
+		bestInstance.addNewRequest(request);
+		//Obtain request image response, set request as finished.
 	}
 
 	static class MyHandler implements HttpHandler {
@@ -211,9 +235,9 @@ public class LoadBalancer{
 			Request request = new QueryParser().parseAndGetRequest(query);
 			request.setRequestId(UUID.randomUUID().toString());
 			System.out.println("Load Balancer received request, query: " + query);
-			Long threadID = new Long(Thread.currentThread().getId());
-			EstimateRequestComplexity(request);
-			//InstanceClass instance = SelectBestInstance(request);
+			request = EstimateRequestComplexity(request);
+			//Maybe store these estimated complexity values in database.
+			SelectBestInstance(request);
 
 		}
 
@@ -225,6 +249,14 @@ public class LoadBalancer{
 	                    " Make sure all properties have been declared.");
 	        }
 		}
+	}
+
+	public static void registerInstance(EC2InstanceController instance){
+		instances.add(instance);
+	}
+
+	public static void removeInstance(EC2InstanceController instance){
+		instances.remove(instance);
 	}
 
 }

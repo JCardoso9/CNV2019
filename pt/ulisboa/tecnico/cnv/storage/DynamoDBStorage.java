@@ -6,19 +6,36 @@ import com.amazonaws.regions.Regions;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMapper;
 import com.amazonaws.auth.profile.ProfileCredentialsProvider;
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.services.dynamodbv2.util.TableUtils;
-import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDBClientBuilder;
+import com.amazonaws.services.dynamodbv2.model.AttributeDefinition;
 import com.amazonaws.services.dynamodbv2.model.AttributeValue;
+import com.amazonaws.services.dynamodbv2.model.ComparisonOperator;
+import com.amazonaws.services.dynamodbv2.model.Condition;
 import com.amazonaws.services.dynamodbv2.model.CreateTableRequest;
+import com.amazonaws.services.dynamodbv2.model.DeleteTableRequest;
+import com.amazonaws.services.dynamodbv2.model.DescribeTableRequest;
+import com.amazonaws.services.dynamodbv2.model.KeySchemaElement;
+import com.amazonaws.services.dynamodbv2.model.KeyType;
+import com.amazonaws.services.dynamodbv2.model.ProvisionedThroughput;
+import com.amazonaws.services.dynamodbv2.model.PutItemRequest;
+import com.amazonaws.services.dynamodbv2.model.PutItemResult;
+import com.amazonaws.services.dynamodbv2.model.ScalarAttributeType;
+import com.amazonaws.services.dynamodbv2.model.ScanRequest;
+import com.amazonaws.services.dynamodbv2.model.ScanResult;
+import com.amazonaws.services.dynamodbv2.model.TableDescription;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
+import com.amazonaws.services.dynamodbv2.util.TableUtils;
 import java.util.*;
 import pt.ulisboa.tecnico.cnv.parser.*;
 
 public class DynamoDBStorage{
-	static AmazonDynamoDB dynamoDB;
-	static DynamoDBMapper mapper;
+	public static AmazonDynamoDB dynamoDB;
+	public static DynamoDBMapper mapper;
 	static Map<Long, Request> requestInformation = new HashMap<>();
 
-	private static void init() throws Exception {
+	public static void init() throws Exception {
+        String tableName = "Requests";
         /*
          * The ProfileCredentialsProvider will return your [default]
          * credential profile by reading from the credentials file located at
@@ -39,10 +56,24 @@ public class DynamoDBStorage{
 	            .withRegion(Regions.US_EAST_1)
 	            .build();
 
-	    mapper = new DynamoDBMapper(dynamoDB);
-	    CreateTableRequest createTableRequest = mapper.generateCreateTableRequest(RequestMapping.class);
-	    TableUtils.createTableIfNotExists(dynamoDB, createTableRequest);
-	    TableUtils.waitUntilActive(dynamoDB, "Requests");
+	    //mapper = new DynamoDBMapper(dynamoDB);
+        CreateTableRequest createTableRequest = new CreateTableRequest().withTableName(tableName)
+                .withKeySchema(new KeySchemaElement().withAttributeName("Dataset").withKeyType(KeyType.HASH))
+                .withAttributeDefinitions(new AttributeDefinition().withAttributeName("Dataset").withAttributeType(ScalarAttributeType.S))
+                .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(1L).withWriteCapacityUnits(1L))
+                .withKeySchema(new KeySchemaElement().withAttributeName("RequestId").withKeyType(KeyType.RANGE))
+                .withAttributeDefinitions(new AttributeDefinition().withAttributeName("RequestId").withAttributeType(ScalarAttributeType.S))
+                .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(1L).withWriteCapacityUnits(1L));
+        //DeleteTableRequest deleteTableRequest = new DeleteTableRequest(tableName);
+	    //CreateTableRequest createTableRequest = mapper.generateCreateTableRequest(RequestMapping.class);
+        //createTableRequest.setProvisionedThroughput(new ProvisionedThroughput(10L, 10L));
+        //TableUtils.deleteTableIfExists(dynamoDB, deleteTableRequest);
+        TableUtils.createTableIfNotExists(dynamoDB, createTableRequest);
+        TableUtils.waitUntilActive(dynamoDB, tableName);
+        DescribeTableRequest describeTableRequest = new DescribeTableRequest().withTableName(tableName);
+        TableDescription tableDescription = dynamoDB.describeTable(describeTableRequest).getTable();
+        System.out.println("Table Description: " + tableDescription);
+        //System.out.println("Deleted");
     }	
 
     //Decide which metric to store
@@ -57,7 +88,6 @@ public class DynamoDBStorage{
     		mappedRequest.setMetric(metric);
     		//Save updated isntance into database
     		mapper.save(mappedRequest);
-
     }	
 
     //Need to store the estimates for new requests aswell.

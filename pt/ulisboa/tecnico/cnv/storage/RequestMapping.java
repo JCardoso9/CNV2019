@@ -1,6 +1,7 @@
 package pt.ulisboa.tecnico.cnv.storage;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBAttribute;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBHashKey;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBRangeKey;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBIgnore;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBTable;
 import pt.ulisboa.tecnico.cnv.parser.*;
@@ -16,7 +17,7 @@ public class RequestMapping{
 	private String strategy;
 	private String dataset;
 	private double metricResult;
-	private long id;
+	private String id;
 
 	public RequestMapping(){
 	}
@@ -72,7 +73,7 @@ public class RequestMapping{
 		return this.strategy;
 	}
 
-	@DynamoDBAttribute(attributeName="Dataset")
+	@DynamoDBHashKey(attributeName="Dataset")
 	public String getDataset(){
 		return this.dataset;
 	}
@@ -82,8 +83,8 @@ public class RequestMapping{
 		return this.metricResult;
 	}
 
-	@DynamoDBHashKey(attributeName="RequestId")
-	public long getRequestId(){
+	@DynamoDBRangeKey(attributeName="RequestId")
+	public String getRequestId(){
 		return this.id;
 	}
 }

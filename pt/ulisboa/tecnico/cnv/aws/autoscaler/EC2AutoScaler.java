@@ -45,7 +45,8 @@ public class EC2AutoScaler {
 
     private static ResourceBundle properties;
     private static String REGION = "region";
-    private static String LOAD_BALANCER_AMI_ID = "load_balancer_ami_id";
+    private static String AUTO_SCALER_AMI_ID = "auto_scaler_ami_id";
+    private static String AUTO_SCALER_NAME = "auto_scaler_name";
     private static String LOAD_BALANCER_NAME = "load_balancer_name";
     private static String INSTANCE_TYPE = "instance_type";
     private static String KEY_PAIR_NAME = "key_pair_name";
@@ -56,7 +57,11 @@ public class EC2AutoScaler {
 
         init();
 
-        final Region regionObject = new Region().withRegionName(properties.getString(REGION));
+        //final Region regionObject = new Region().withRegionName(properties.getString(REGION));
+        final String region = properties.getString(REGION);
+        final String amiID = properties.getString(AUTO_SCALER_AMI_ID);
+        final String securityGroup = properties.getString(SECURITY_GROUP);
+        final String keyPairName = properties.getString(KEY_PAIR_NAME);        
         final String loadBalancerName = properties.getString(LOAD_BALANCER_NAME);
         int idleTimeout = 0;
 
@@ -71,9 +76,7 @@ public class EC2AutoScaler {
             idleTimeout = 60;
         }
 
-        ElasticLoadBalancer.createLoadBalancer(loadBalancerName, regionObject.getRegionName(), idleTimeout);
-
-        registerRunningInstancesWithLoadBalancer(loadBalancerName, regionObject);
+        AutoScaling.createAutoScaling(region, amiID, securityGroup, keyPairName, loadBalancerName);
 
     }
 
@@ -92,14 +95,14 @@ public class EC2AutoScaler {
     private static void checkResourceBundleKeys(ResourceBundle props) throws Exception {
         // If the required properties exist and have a value
         if (!(props.containsKey(REGION)
-                && props.containsKey(LOAD_BALANCER_AMI_ID)
-                && props.containsKey(LOAD_BALANCER_NAME)
+                && props.containsKey(AUTO_SCALER_AMI_ID)
+                && props.containsKey(AUTO_SCALER_NAME)
                 && props.containsKey(INSTANCE_TYPE)
                 && props.containsKey(KEY_PAIR_NAME)
                 && props.containsKey(SECURITY_GROUP))
             || !(!props.getString(REGION).isEmpty()
-                && !props.getString(LOAD_BALANCER_AMI_ID).isEmpty()
-                && !props.getString(LOAD_BALANCER_NAME).isEmpty()
+                && !props.getString(AUTO_SCALER_AMI_ID).isEmpty()
+                && !props.getString(AUTO_SCALER_NAME).isEmpty()
                 && !props.getString(INSTANCE_TYPE).isEmpty()
                 && !props.getString(KEY_PAIR_NAME).isEmpty()
                 && !props.getString(SECURITY_GROUP).isEmpty())) {
@@ -108,49 +111,5 @@ public class EC2AutoScaler {
         }
     }
 
-    private static void registerRunningInstancesWithLoadBalancer(String loadBalancerName, Region region) {
-
-        // get the running instances
-        DescribeInstancesResult describeInstancesRequest = AmazonClient
-                .getEC2InstanceForRegion(region)
-                .describeInstances();
-
-        List<Reservation> reservations = describeInstancesRequest.getReservations();
-        List<Instance> instances = new ArrayList<>();
-
-        for (Reservation reservation : reservations)
-        {
-            instances.addAll(reservation.getInstances());
-        }
-
-        // get instance id's
-        // Transform ec2 instances into elb instances
-        if (reservations.size() == 0) {
-            return;
-        }
-
-        String id;
-        List<com.amazonaws.services.elasticloadbalancing.model.Instance> instanceId = new ArrayList<>();
-
-        for (Instance instance : instances) {
-            id = instance.getInstanceId();
-            // Get only those that are in the correct state
-            if (instance.getState().getName().equals(InstanceStateName.Running.toString())) {
-                instanceId.add(new com.amazonaws.services.elasticloadbalancing.model.Instance(id));
-            }
-        }
-
-        // register the instances to the load balancer
-        RegisterInstancesWithLoadBalancerRequest register = new RegisterInstancesWithLoadBalancerRequest();
-        register.setLoadBalancerName(loadBalancerName);
-        register.setInstances(instanceId);
-
-        RegisterInstancesWithLoadBalancerResult registerWithLoadBalancerResult = AmazonClient
-                .getELBInstanceForRegion(region)
-                .registerInstancesWithLoadBalancer(register);
-
-        for (com.amazonaws.services.elasticloadbalancing.model.Instance instance : registerWithLoadBalancerResult.getInstances()) {
-            System.out.println(instance.getInstanceId());
-        }
-    }
+    
 }

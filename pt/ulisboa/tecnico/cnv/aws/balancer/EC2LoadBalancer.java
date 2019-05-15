@@ -68,7 +68,7 @@ public class EC2LoadBalancer {
 
         ElasticLoadBalancer.createLoadBalancer(loadBalancerName, regionObject.getRegionName(), idleTimeout);
 
-        registerRunningInstancesWithLoadBalancer(loadBalancerName, regionObject);
+        //registerRunningInstancesWithLoadBalancer(loadBalancerName, regionObject);
 
     }
 

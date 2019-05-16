@@ -16,6 +16,7 @@ import pt.ulisboa.tecnico.cnv.storage.RequestMapping;
 import pt.ulisboa.tecnico.cnv.aws.autoscaler.*;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMappingException;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -59,7 +60,7 @@ public class LoadBalancer{
 
 		server.setExecutor(Executors.newCachedThreadPool());
 		DynamoDBStorage.init();
-		mapper = new DynamoDBMapper(DynamoDBStorage.dynamoDB);
+		mapper = DynamoDBStorage.mapper;
 		server.start();
 		System.out.println(server.getAddress().toString());
 	}
@@ -114,11 +115,10 @@ public class LoadBalancer{
 	        eav.put(":maxOutX1" , new AttributeValue().withN(GetLimitPoint(intervalAllowed, request.getX1(), false, datasetSize)));
 	        eav.put(":minOutY1" , new AttributeValue().withN(GetLimitPoint(intervalAllowed, request.getY1(), true, datasetSize)));
 			eav.put(":maxOutY1" , new AttributeValue().withN(GetLimitPoint(intervalAllowed, request.getY1(), false, datasetSize)));
-			eav.put(":minXs" , new AttributeValue().withN(GetLimitPoint(intervalAllowed, request.Xs(), false, datasetSize)));
+			eav.put(":minXs" , new AttributeValue().withN(GetLimitPoint(intervalAllowed, request.Xs(), true, datasetSize)));
 			eav.put(":maxXs" , new AttributeValue().withN(GetLimitPoint(intervalAllowed, request.Xs(), false, datasetSize)));
-			eav.put(":minYs" , new AttributeValue().withN(GetLimitPoint(intervalAllowed, request.Ys(), false, datasetSize)));
+			eav.put(":minYs" , new AttributeValue().withN(GetLimitPoint(intervalAllowed, request.Ys(), true, datasetSize)));
 			eav.put(":maxYs" , new AttributeValue().withN(GetLimitPoint(intervalAllowed, request.Ys(), false, datasetSize)));
-
 	        DynamoDBQueryExpression<RequestMapping> queryExpression = new DynamoDBQueryExpression<RequestMapping>()
 	        		.withKeyConditionExpression("Dataset = :dataset")
 	        		.withFilterExpression("Strategy = :strategy"
@@ -132,20 +132,14 @@ public class LoadBalancer{
 	        List<RequestMapping> mapping = mapper.query(RequestMapping.class, queryExpression);
 	        return mapping;
          } catch (AmazonServiceException ase) {
-            System.out.println("Caught an AmazonServiceException, which means your request made it "
-                    + "to AWS, but was rejected with an error response for some reason.");
-            System.out.println("Error Message:    " + ase.getMessage());
-            System.out.println("HTTP Status Code: " + ase.getStatusCode());
-            System.out.println("AWS Error Code:   " + ase.getErrorCode());
+            System.out.println("Message:    " + ase.getMessage());
+            System.out.println("Error Code:   " + ase.getErrorCode());
             System.out.println("Error Type:       " + ase.getErrorType());
             System.out.println("Request ID:       " + ase.getRequestId());
         } catch (AmazonClientException ace) {
-            System.out.println("Caught an AmazonClientException, which means the client encountered "
-                    + "a serious internal problem while trying to communicate with AWS, "
-                    + "such as not being able to access the network.");
-            System.out.println("Error Message: " + ace.getMessage());
+            System.out.println("Message: " + ace.getMessage());
         }
-		return null;
+		return Collections.emptyList();
 		
 	}
 
@@ -171,7 +165,8 @@ public class LoadBalancer{
 					}
 					long cost = Math.round((mapping.getMetrics()/maxMetric)*n);
 					request.setEstimatedCost(cost);
-					break;
+					System.out.println("Found exact same request : "  + request.getEstimatedCost());
+					return request;
 				}
 				if (maxMetric < mapping.getMetrics()){
 					maxMetric = mapping.getMetrics();
@@ -183,6 +178,7 @@ public class LoadBalancer{
 			metricsAvg = metricsAvg/metricsNumber;
 			long cost = Math.round((metricsAvg/maxMetric)*n);
 			request.setEstimatedCost(cost);
+			System.out.println("Average of similar requests cost : " + request.getEstimatedCost());
 		}
 		else{
 			System.out.println("Nothing in db ");
@@ -234,10 +230,12 @@ public class LoadBalancer{
 			final String query = t.getRequestURI().getQuery();
 			Request request = new QueryParser().parseAndGetRequest(query);
 			request.setRequestId(UUID.randomUUID().toString());
+			request.setEstimatedCost(0);
 			System.out.println("Load Balancer received request, query: " + query);
+			long threadId = Thread.currentThread().getId();
 			request = EstimateRequestComplexity(request);
 			//Maybe store these estimated complexity values in database.
-			SelectBestInstance(request);
+			//SelectBestInstance(request);
 
 		}
 

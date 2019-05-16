@@ -3,13 +3,13 @@ import java.io.*;
 import java.util.*;
 import java.math.BigInteger;
 
-import pt.ulisboa.tecnico.cnv.server.storage.ThreadLocalStorage;
+import pt.ulisboa.tecnico.cnv.storage.*;
 
 //Counts number of instructions per thread of the whole program
 public class BasicBlockCount {
   private static PrintStream out = null;
   private static int b_count = 0;
-  private static Map<Long, BigInteger> basicBlockCounter = new HashMap<Long, BigInteger>();
+  private static Map<Long, Long> basicBlockCounter = new HashMap<Long, Long>();
   private static Integer i = 0;
 
   /*
@@ -38,10 +38,10 @@ public class BasicBlockCount {
   }
 
   public static synchronized void printBBCount(String foo) {
-    Long threadID = new Long(Thread.currentThread().getId());
-    BigInteger basicBlockCount = (BigInteger) basicBlockCounter.get(threadID);
+    long threadID = Thread.currentThread().getId();
+    long basicBlockCount = (long) basicBlockCounter.get(threadID);
 
-    try {
+    /*try {
       BufferedWriter writer;
       
       String str = "Thread ID: " + threadID + " |  Params: " + ThreadLocalStorage.getParams().toString()
@@ -60,16 +60,18 @@ public class BasicBlockCount {
     } catch (IOException e) {
       e.printStackTrace();
     }
-    basicBlockCounter.put(threadID, new BigInteger("0"));
+    basicBlockCounter.put(threadID, new BigInteger("0"));*/
+    DynamoDBStorage.storeMetricsGathered(threadID, basicBlockCount);
+
   }
 
   public static synchronized void count(int instr) {
-    Long threadID = new Long(Thread.currentThread().getId());
-    BigInteger currentBB = (BigInteger) basicBlockCounter.get(threadID);
-    if (currentBB == null) {
-      currentBB = new BigInteger("0");
+    long threadID = Thread.currentThread().getId();
+    long currentBB = 0;
+    if (basicBlockCounter.get(threadID) != null) {
+      currentBB = basicBlockCounter.get(threadID);
     }
-    BigInteger newValue = currentBB.add(BigInteger.valueOf(instr));
+    long newValue = currentBB + instr;
     basicBlockCounter.put(threadID, newValue);
   }
 }

@@ -22,6 +22,8 @@ import pt.ulisboa.tecnico.cnv.server.storage.ThreadLocalStorage;
 import pt.ulisboa.tecnico.cnv.solver.Solver;
 import pt.ulisboa.tecnico.cnv.solver.SolverArgumentParser;
 import pt.ulisboa.tecnico.cnv.solver.SolverFactory;
+import pt.ulisboa.tecnico.cnv.storage.*;
+import pt.ulisboa.tecnico.cnv.parser.*;
 
 import javax.imageio.ImageIO;
 
@@ -64,10 +66,11 @@ public class WebServer {
 
 			// Get the query.
 			final String query = t.getRequestURI().getQuery();
+			Long threadID = new Long(Thread.currentThread().getId());
 
 			System.out.println("> Query:\t" + query);
-
-			ThreadLocalStorage.setParams(query);
+			Request request = new QueryParser().parseAndGetRequest(query);
+			DynamoDBStorage.setNewRequest(threadID, request);
 
 			// Break it down into String[].
 			final String[] params = query.split("&");

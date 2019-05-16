@@ -55,39 +55,29 @@ public class DynamoDBStorage{
 	            .withCredentials(credentialsProvider)
 	            .withRegion(Regions.US_EAST_1)
 	            .build();
-
-	    //mapper = new DynamoDBMapper(dynamoDB);
-        CreateTableRequest createTableRequest = new CreateTableRequest().withTableName(tableName)
-                .withKeySchema(new KeySchemaElement().withAttributeName("Dataset").withKeyType(KeyType.HASH))
-                .withAttributeDefinitions(new AttributeDefinition().withAttributeName("Dataset").withAttributeType(ScalarAttributeType.S))
-                .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(1L).withWriteCapacityUnits(1L))
-                .withKeySchema(new KeySchemaElement().withAttributeName("RequestId").withKeyType(KeyType.RANGE))
-                .withAttributeDefinitions(new AttributeDefinition().withAttributeName("RequestId").withAttributeType(ScalarAttributeType.S))
-                .withProvisionedThroughput(new ProvisionedThroughput().withReadCapacityUnits(1L).withWriteCapacityUnits(1L));
-        //DeleteTableRequest deleteTableRequest = new DeleteTableRequest(tableName);
-	    //CreateTableRequest createTableRequest = mapper.generateCreateTableRequest(RequestMapping.class);
-        //createTableRequest.setProvisionedThroughput(new ProvisionedThroughput(10L, 10L));
-        //TableUtils.deleteTableIfExists(dynamoDB, deleteTableRequest);
+        mapper = new DynamoDBMapper(dynamoDB);
+	    CreateTableRequest createTableRequest = mapper.generateCreateTableRequest(RequestMapping.class);
+        createTableRequest.setProvisionedThroughput(new ProvisionedThroughput(5L, 5L));
         TableUtils.createTableIfNotExists(dynamoDB, createTableRequest);
         TableUtils.waitUntilActive(dynamoDB, tableName);
         DescribeTableRequest describeTableRequest = new DescribeTableRequest().withTableName(tableName);
         TableDescription tableDescription = dynamoDB.describeTable(describeTableRequest).getTable();
         System.out.println("Table Description: " + tableDescription);
-        //System.out.println("Deleted");
     }	
 
     //Decide which metric to store
     public static void storeMetricsGathered(long threadID, long metric){
     	Request correspondingRequest = requestInformation.get(threadID);
-    	RequestMapping mappedRequest = mapper.load(RequestMapping.class, correspondingRequest.getRequestId());
+    	RequestMapping mappedRequest = mapper.load(RequestMapping.class, correspondingRequest.getDataset(),correspondingRequest.getRequestId());
     	//Already exists in DB
     	if (mappedRequest == null){
     		mappedRequest = new RequestMapping();
     		mappedRequest.setRequest(correspondingRequest);
     	}
-    		mappedRequest.setMetric(metric);
-    		//Save updated isntance into database
-    		mapper.save(mappedRequest);
+		mappedRequest.setMetric(metric);
+		//Save updated isntance into database
+        System.out.println(mappedRequest);
+		mapper.save(mappedRequest);
     }	
 
     //Need to store the estimates for new requests aswell.

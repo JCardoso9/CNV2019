@@ -6,16 +6,11 @@ import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
 
-<<<<<<< HEAD
 import pt.ulisboa.tecnico.cnv.parser.Request;
 
 import java.util.ResourceBundle;
 import java.util.Locale;
 import java.util.*;
-=======
-import java.util.Locale;
-import java.util.ResourceBundle;
->>>>>>> 60cd845d09d992095a88fe7565770575602a124d
 
 
 public class EC2InstanceController {
@@ -28,7 +23,7 @@ public class EC2InstanceController {
     private static String SECURITY_GROUP = "security_group";
     private static String IDLE_TIMEOUT = "idle_timeout";
     private static List<Request> requestList = new ArrayList<Request>();
-    private static int currentLoad;
+    private static int currentLoad = 0;
 
     private String ec2InstanceID;
 

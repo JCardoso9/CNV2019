@@ -43,9 +43,17 @@ public class RequestMapping{
 		return this.x0;
 	}
 
+	public void setX0(int x0){
+		this.x0 = x0;
+	}
+
 	@DynamoDBAttribute(attributeName="Y0")
 	public int getY0(){
 		return this.y0;
+	}
+
+	public void setY0(int y0){
+		this.y0 = y0;
 	}
 
 	@DynamoDBAttribute(attributeName="X1")
@@ -53,9 +61,17 @@ public class RequestMapping{
 		return this.x1;
 	}
 
+	public void setX1(int x1){
+		this.x1 = x1;
+	}
+
 	@DynamoDBAttribute(attributeName="Y1")
 	public int getY1(){
 		return this.y1;
+	}
+
+	public void setY1(int y1){
+		this.y1 = y1;
 	}
 
 	@DynamoDBAttribute(attributeName="Xs")
@@ -63,9 +79,17 @@ public class RequestMapping{
 		return this.xs;
 	}
 
+	public void setXs(int xs){
+		this.xs = xs;
+	}
+
 	@DynamoDBAttribute(attributeName="Ys")
 	public int getYs(){
 		return this.ys;
+	}
+
+	public void setYs(int ys){
+		this.ys = ys;
 	}
 
 	@DynamoDBAttribute(attributeName="Strategy")
@@ -73,9 +97,17 @@ public class RequestMapping{
 		return this.strategy;
 	}
 
+	public void setStrategy(String strategy){
+		this.strategy =strategy;
+	}
+
 	@DynamoDBHashKey(attributeName="Dataset")
 	public String getDataset(){
 		return this.dataset;
+	}
+
+	public void setDataset(String dataset){
+		this.dataset = dataset;
 	}
 
 	@DynamoDBAttribute(attributeName="Metric")
@@ -83,8 +115,21 @@ public class RequestMapping{
 		return this.metricResult;
 	}
 
+	public void setMetrics(double metrics){
+		this.metricResult = metrics;
+	}
+
 	@DynamoDBRangeKey(attributeName="RequestId")
 	public String getRequestId(){
 		return this.id;
+	}
+
+	public void setRequestId(String requestId){
+		this.id = requestId;
+	}
+
+	@Override
+	public String toString(){
+		return this.getX0() + " " + this.getX1() + " " + this.getY0() + " " + this.getY1() + " " + this.getXs() + " " + this.getYs() + " " + this.getDataset() + " " + this.getStrategy() + " " + this.getMetrics() + " " + this.getRequestId();
 	}
 }

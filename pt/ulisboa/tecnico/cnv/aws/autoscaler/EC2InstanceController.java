@@ -5,12 +5,14 @@ import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
+import com.amazonaws.services.ec2.model.Instance;
 
 import pt.ulisboa.tecnico.cnv.parser.Request;
 
 import java.util.ResourceBundle;
 import java.util.Locale;
 import java.util.*;
+
 
 
 public class EC2InstanceController {
@@ -26,10 +28,12 @@ public class EC2InstanceController {
     private static int currentLoad = 0;
 
     private String ec2InstanceID;
+    private String ec2InstanceIP;
 
 
-    private EC2InstanceController(String ec2InstanceID) {
+    private EC2InstanceController(String ec2InstanceID, String ec2InstanceIP) {
         this.ec2InstanceID = ec2InstanceID;
+        this.ec2InstanceIP = ec2InstanceIP;
     }
 
     public static EC2InstanceController requestNewEC2Instance(AmazonEC2 client) throws Exception {
@@ -51,12 +55,13 @@ public class EC2InstanceController {
         ;
         RunInstancesResult runInstancesResult =
                 client.runInstances(runInstancesRequest);
-        String instanceId = runInstancesResult.getReservation().getInstances()
-                .get(0).getInstanceId();
+        Instance instance = runInstancesResult.getReservation().getInstances().get(0);
+        String instanceId =instance.getInstanceId();
+        String instanceIp = instance.getPublicIpAddress();
         System.out.println("EC2 instance created.");
 
 
-        return new EC2InstanceController(instanceId);
+        return new EC2InstanceController(instanceId, instanceIp);
     }
 
     public synchronized void shutDownEC2Instance(AmazonEC2 client) {

@@ -19,10 +19,16 @@ import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMappingException;
 
 import java.io.IOException;
+import java.io.DataInputStream;
+import java.io.OutputStream;
+
 import java.net.InetSocketAddress;
 import java.util.*;
-
 import java.util.concurrent.Executors;
+
+import java.net.URL;
+import com.sun.net.httpserver.Headers;
+import java.net.HttpURLConnection;
 
 public class LoadBalancer{
 	private static final int balancerPort = 8001;
@@ -194,18 +200,49 @@ public class LoadBalancer{
 		return request;
 	}
 
-	static void SelectBestInstance(Request request){
+	static void SelectBestInstance(Request request, final HttpExchange t){
 		//Also check if instance is bound to be removed
-		Collections.sort(instances, instanceComparator);
-		EC2InstanceController bestInstance = instances.get(0);
-		/* int bestIndex = 0
-		EC2InstanceController bestInstance = instances.get(bestIndex);
-		while (!bestInstance.isAlive()){
-			bestIndex++;
-			bestInstance = instances.get(bestIndex);
-		}*/
-		bestInstance.addNewRequest(request);
-		//Obtain request image response, set request as finished.
+		try{
+			String bestInstanceIp = "ye";
+			//bestInstance.addNewRequest(request);
+			URL url = new URL("http://" + bestInstanceIp + ":8000/climb?" + request.getRawQuery());
+			HttpURLConnection con = (HttpURLConnection) url.openConnection();
+			con.setRequestMethod("GET");
+
+			DataInputStream is = new DataInputStream((con.getInputStream()));
+	  		byte[] responseBytes = new byte[con.getContentLength()];
+	  		int bytes = 0;
+	  		while (bytes < con.getContentLength()){
+	  			bytes += is.read(responseBytes, bytes, responseBytes.length - bytes);
+	  		}
+
+	  		if (con != null){
+	  			con.disconnect();
+	  		}
+
+	  		final Headers hdrs = t.getResponseHeaders();
+			t.sendResponseHeaders(200, responseBytes.length);
+			hdrs.add("Content-Type", "image/png");
+			hdrs.add("Access-Control-Allow-Origin", "*");
+			hdrs.add("Access-Control-Allow-Credentials", "true");
+			hdrs.add("Access-Control-Allow-Methods", "POST, GET, HEAD, OPTIONS");
+			hdrs.add("Access-Control-Allow-Headers",
+					"Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
+
+
+	  		final OutputStream os = t.getResponseBody();
+	        os.write(responseBytes);
+	        os.close();
+			/* int bestIndex = 0
+			EC2InstanceController bestInstance = instances.get(bestIndex);
+			while (!bestInstance.isAlive()){
+				bestIndex++;
+				bestInstance = instances.get(bestIndex);
+			}*/
+			//Obtain request image response, set request as finished.
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 	}
 
 	static class MyHandler implements HttpHandler {
@@ -235,7 +272,7 @@ public class LoadBalancer{
 			long threadId = Thread.currentThread().getId();
 			request = EstimateRequestComplexity(request);
 			//Maybe store these estimated complexity values in database.
-			//SelectBestInstance(request);
+			SelectBestInstance(request,t);
 
 		}
 

@@ -1,32 +1,20 @@
 package pt.ulisboa.tecnico.cnv.aws.autoscaler;
 
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.model.*;
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
+import pt.ulisboa.tecnico.cnv.aws.observer.AbstractManagerObservableObserver;
 
-import java.util.ResourceBundle;
+import java.util.*;
 
 
-import java.util.ResourceBundle;
-import java.util.Locale;
-import java.util.HashMap;
-import java.util.Comparator;
-import java.util.Collections;
-import java.util.Collection;
-import java.util.List;
-
-
-
-
-public class EC2InstancesManager{
+public class EC2InstancesManager extends AbstractManagerObservableObserver {
 
 
 	static EC2InstancesManager  instance;
 
-
     String ec2InstanceID;
 
+    private EC2InstancesManager(List<Observable> instances) {
+        super(instances);
+    }
 
     private static final Comparator<EC2InstanceController> instanceComparator = new Comparator<EC2InstanceController>() {
         @Override
@@ -40,7 +28,7 @@ public class EC2InstancesManager{
 
     public static EC2InstancesManager getInstance() {
     	if (instance == null){ 
-    		instance = new EC2InstancesManager();
+    		instance = new EC2InstancesManager(null);
     	}
     	return instance;
     }
@@ -106,4 +94,8 @@ public class EC2InstancesManager{
         return instances.get(0).getInstanceID();
     }
 
+    @Override
+    public void updateInstancesList(EC2InstanceController instance, String[] complexityAndState) {
+        // TODO:
+    }
 }

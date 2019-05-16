@@ -41,5 +41,5 @@ public abstract class AbstractManagerObservableObserver extends Observable imple
         }
     }
 
-    public abstract void updateInstancesList(EC2InstanceController instance, String[] complecityAndState);
+    public abstract void updateInstancesList(EC2InstanceController instance, String[] complexityAndState);
 }

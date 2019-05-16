@@ -146,7 +146,12 @@ public class EC2InstanceController extends AbstractInstanceObservable {
         return this.status == InstanceStatus.MarkedForShutdown;
     }
 
-    public static void setStatus(InstanceStatus status){
-        status = status;
+    public void markForShutdown(){
+        this.status = InstanceStatus.MarkedForShutdown;
+    }
+
+
+    public void reActivate(){
+        this.status = InstanceStatus.Available;
     }
 }

@@ -24,17 +24,25 @@ import com.amazonaws.services.elasticloadbalancing.model.RegisterInstancesWithLo
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.Timer;
 import pt.ulisboa.tecnico.cnv.aws.AmazonClient;
 import pt.ulisboa.tecnico.cnv.aws.balancer.*;
+
 import java.lang.Runnable;
+
+import pt.ulisboa.tecnico.cnv.aws.observer.AbstractAutoScalerObserver;
+
 
 
 
 import static java.lang.Integer.parseInt;
 
-public class EC2AutoScaler implements Runnable{
+
+public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnable{
+
 
     /*
      * Before running the code: Fill in your AWS access credentials in the provided
@@ -56,31 +64,105 @@ public class EC2AutoScaler implements Runnable{
 
     private static long MINIMUM_LOAD_AVAILABLE = MINIMUM_NUMBER_OF_INSTANCES * MAXIMUM_REQUEST_COMLPEXITY;
 
+    private int NUMBER_OF_SECONDS_BEFORE_SHUTDOWN = 60;
+
     private EC2InstancesManager manager;
 
+    static EC2AutoScaler  instance;
+
+
+    private HashMap<String, Integer> idleInstances;
+
+    private HashMap<String, Timer> timers;
+
+
+    public EC2AutoScaler(){
+        super(EC2InstancesManager.getInstance());
+
+        manager = EC2InstancesManager.getInstance();
+        manager.addObserver(this);
+    }
+
+    public synchronized static EC2AutoScaler getInstance() {
+        if (instance == null){ 
+            instance = new EC2AutoScaler();
+        }
+        return instance;
+    }
+
     public void run(){
-        /*if(manager.getNumberOfInstances() < MINIMUM_NUMBER_OF_INSTANCES){
+    }
+
+    @Override
+    public void executeAutoScalerLogic(){
+        if(manager.getNumberInstances() < MINIMUM_NUMBER_OF_INSTANCES){
+
             manager.createInstance();
         }
+
         else{
-            if (manager.getNumberOfInstances() < MAXIMUM_NUMBER_OF_INSTANCES){
-                if (manager.getTotalAvailableLoad() < MINIMUM_LOAD_AVAILABLE){
+
+            //check if scale up is needed
+            if (manager.getNumberInstances() < MAXIMUM_NUMBER_OF_INSTANCES){
+                if (manager.getClusterAvailableLoad() < MINIMUM_LOAD_AVAILABLE){
                     scaleUp();
                 }
             }
-        }*/
-    }  
+
+            //check if scale down is needed
+            List<String> updatedIdleInstances = manager.getIdleInstances();
+            markForShutdown(updatedIdleInstances);
+        }
+    } 
 
 
+    public void markForShutdown(List<String> updatedIdleInstances){
+        for (String instanceID : updatedIdleInstances){
+            if (!idleInstances.containsKey(instanceID)){
+                System.out.println("Marking " + instanceID + " for shutdown...");
+                idleInstances.put(instanceID, 0);
+                manager.markForShutdown(instanceID);
+                startShutdownProcedure(instanceID);
+            }
+        }
+    }
+
+    public void startShutdownProcedure(String instanceID){
+        if (idleInstances.containsKey(instanceID) && idleInstances.get(instanceID) == 0){
+            Timer timer = new Timer();
+            timers.put(instanceID, timer);
+            timer.schedule(new ShutdownTimer(instanceID), NUMBER_OF_SECONDS_BEFORE_SHUTDOWN);
+            System.out.println("Started timer...");
+            idleInstances.put(instanceID, 1);
+        }
+    }
+
+    public void quitShutdownProcedure(String instanceID) {
+        if (timers.containsKey(instanceID)  || idleInstances.containsKey(instanceID)){
+            idleInstances.remove(instanceID);
+            timers.get(instanceID).purge();
+            System.out.println("Task has been purged");
+        }
+        else{
+            System.out.println("Instance was not idling");
+        }
+    }
+
+
+    public boolean isInstanceIdle(String instanceID){
+        return idleInstances.containsKey(instanceID);
+    }
 
     public void scaleUp() {
         manager.createInstance();
     }  
 
     public void scaleDown(String instanceID){
-        /*if (ec2instances.size() > MINIMUM_NUMBER_OF_INSTANCES) {
-            manager.deleteInstance(instanceID);
-        }*/
+
+        timers.remove(instanceID);
+        idleInstances.remove(instanceID);
+        manager.deleteInstance(instanceID);
+
     }
 
     

@@ -12,13 +12,10 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
     String ec2InstanceID;
 
+
     private HashMap<String, EC2InstanceController> ec2instances = new HashMap<String, EC2InstanceController>();
     private HashMap<String, Integer> ec2instancesLoads = new HashMap<String, Integer>();
 
-
-    private EC2InstancesManager() {
-        System.out.println("Starting instances manager...");
-    }
 
     private static final Comparator<EC2InstanceController> instanceComparator = new Comparator<EC2InstanceController>() {
         @Override
@@ -106,7 +103,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     	totalClusterLoad += newRequestLoad;
     }*/
 
-    public String getInstanceWithSmallerLoad(){
+    public EC2InstanceController getInstanceWithSmallerLoad(){
     	List<EC2InstanceController> instances = (List)ec2instances.values();
         Collections.sort(instances, instanceComparator);
         int bestIndex = 0;
@@ -115,7 +112,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
             bestIndex++;
             bestInstance = instances.get(bestIndex);
         }
-        return bestInstance.getInstanceIP();
+        return bestInstance;
     }
 
 }

@@ -40,26 +40,7 @@ public class LoadBalancer implements Runnable{
 	private static double largestMapArea = 0;
 	private static double distanceLargestMap = 0;
 	private static int n = 10;
-	private static List<EC2InstanceController> instances = new ArrayList<>();
-	private static final Comparator<EC2InstanceController> instanceComparator = new Comparator<EC2InstanceController>() {
-        @Override
-        public int compare(EC2InstanceController i1, EC2InstanceController i2) {
-        	int smallestLoad = (i1.getLoad() < i2.getLoad()) ? i1.getLoad() : i2.getLoad();
-            return smallestLoad;
-        }
-	};
-
-	/*private LoadBalancer() throws Exception{
-		final HttpServer server = HttpServer.create(new InetSocketAddress(balancerPort), 0);
-
-		server.createContext("/climb", new MyHandler());
-
-		server.setExecutor(Executors.newCachedThreadPool());
-		DynamoDBStorage.init();
-		mapper = DynamoDBStorage.mapper;
-		server.start();
-
-	}*/
+	private static EC2InstancesManager manager;
 
 	public static void main(String[] args) throws Exception {
 		ExecutorService executor = Executors.newCachedThreadPool();
@@ -70,8 +51,6 @@ public class LoadBalancer implements Runnable{
 	}
 	public void run() {
 		try{
-			EC2InstancesManager manager = EC2InstancesManager.getInstance();
-			System.out.println(manager.toString());
 			final HttpServer server = HttpServer.create(new InetSocketAddress(balancerPort), 0);
 
 			server.createContext("/climb", new MyHandler());
@@ -79,6 +58,7 @@ public class LoadBalancer implements Runnable{
 			System.out.println(server.getAddress().toString());
 			DynamoDBStorage.init();
 			mapper = DynamoDBStorage.mapper;
+			manager = EC2InstancesManager.getInstance();
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -216,8 +196,10 @@ public class LoadBalancer implements Runnable{
 	static void SelectBestInstance(Request request, final HttpExchange t){
 		//Also check if instance is bound to be removed
 		try{
-			String bestInstanceIp = "ye";
-			//bestInstance.addNewRequest(request);
+			//If bestInstanceIp == null -> wait some seconds and retry
+			EC2InstanceController bestInstance = manager.getInstanceWithSmallerLoad();
+			bestInstance.addNewRequest(request);
+			String bestInstanceIp = bestInstanceIp.getInstanceIP();
 			URL url = new URL("http://" + bestInstanceIp + ":8000/climb?" + request.getRawQuery());
 			HttpURLConnection con = (HttpURLConnection) url.openConnection();
 			con.setRequestMethod("GET");
@@ -232,6 +214,7 @@ public class LoadBalancer implements Runnable{
 	  		if (con != null){
 	  			con.disconnect();
 	  		}
+	  		bestInstance.removeRequest(request);
 
 	  		final Headers hdrs = t.getResponseHeaders();
 			t.sendResponseHeaders(200, responseBytes.length);
@@ -246,13 +229,7 @@ public class LoadBalancer implements Runnable{
 	  		final OutputStream os = t.getResponseBody();
 	        os.write(responseBytes);
 	        os.close();
-			/* int bestIndex = 0
-			EC2InstanceController bestInstance = instances.get(bestIndex);
-			while (!bestInstance.isAlive()){
-				bestIndex++;
-				bestInstance = instances.get(bestIndex);
-			}*/
-			//Obtain request image response, set request as finished.
+
 		}catch(Exception e){
 			e.printStackTrace();
 		}
@@ -299,13 +276,4 @@ public class LoadBalancer implements Runnable{
 	        }
 		}
 	}
-
-	public static void registerInstance(EC2InstanceController instance){
-		instances.add(instance);
-	}
-
-	public static void removeInstance(EC2InstanceController instance){
-		instances.remove(instance);
-	}
-
 }

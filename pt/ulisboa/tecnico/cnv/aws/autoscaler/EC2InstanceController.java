@@ -5,9 +5,16 @@ import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.model.RunInstancesRequest;
 import com.amazonaws.services.ec2.model.RunInstancesResult;
 import com.amazonaws.services.ec2.model.TerminateInstancesRequest;
+
 import com.amazonaws.services.ec2.model.Instance;
 
+
+import com.amazonaws.services.ec2.model.Region;
+
+import java.util.ResourceBundle;
+
 import pt.ulisboa.tecnico.cnv.parser.Request;
+import pt.ulisboa.tecnico.cnv.aws.AmazonClient;
 
 import java.util.ResourceBundle;
 import java.util.Locale;
@@ -17,15 +24,25 @@ import java.util.*;
 
 public class EC2InstanceController {
 
+
+    enum InstanceStatus {
+      Available,
+      MarkedForShutdown
+    }
+
     private static ResourceBundle properties;
     private static String REGION = "region";
     private static String INSTANCE_AMI_ID = "instance_ami_id";
     private static String INSTANCE_TYPE = "instance_type";
     private static String KEY_PAIR_NAME = "key_pair_name";
     private static String SECURITY_GROUP = "security_group";
-    private static String IDLE_TIMEOUT = "idle_timeout";
     private static List<Request> requestList = new ArrayList<Request>();
     private static int currentLoad = 0;
+
+
+    final static Region regionObject = new Region().withRegionName(properties.getString(REGION));
+
+    private EC2InstancesManager manager;
 
     private String ec2InstanceID;
     private String ec2InstanceIP;
@@ -34,11 +51,18 @@ public class EC2InstanceController {
     private EC2InstanceController(String ec2InstanceID, String ec2InstanceIP) {
         this.ec2InstanceID = ec2InstanceID;
         this.ec2InstanceIP = ec2InstanceIP;
+
+        manager = EC2InstancesManager.getInstance();
+
     }
 
-    public static EC2InstanceController requestNewEC2Instance(AmazonEC2 client) throws Exception {
+    public static EC2InstanceController requestNewEC2Instance()  {
 
-        init();
+        try {
+            init();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
 
         RunInstancesRequest runInstancesRequest =
                 new RunInstancesRequest();
@@ -54,23 +78,31 @@ public class EC2InstanceController {
                 //.withIamInstanceProfile(new IamInstanceProfileSpecification().withName(props.getString("render.iam.role.name")))
         ;
         RunInstancesResult runInstancesResult =
-                client.runInstances(runInstancesRequest);
+
+        AmazonClient.getEC2InstanceForRegion(regionObject).runInstances(runInstancesRequest);
         Instance instance = runInstancesResult.getReservation().getInstances().get(0);
         String instanceId =instance.getInstanceId();
         String instanceIp = instance.getPublicIpAddress();
+
         System.out.println("EC2 instance created.");
 
 
         return new EC2InstanceController(instanceId, instanceIp);
     }
 
-    public synchronized void shutDownEC2Instance(AmazonEC2 client) {
+
+    public String  getInstanceID() {return ec2InstanceID;}
+
+
+    public void shutDownEC2Instance() {
         System.out.println("Shutting down instance with ID " + ec2InstanceID + "...");
         TerminateInstancesRequest termInstanceReq = new TerminateInstancesRequest();
         termInstanceReq.withInstanceIds(ec2InstanceID);
-        client.terminateInstances(termInstanceReq);
+        AmazonClient.getEC2InstanceForRegion(regionObject).terminateInstances(termInstanceReq);
         System.out.println("EC2 instance terminated. ");
     }
+
+
 
     private static void init() throws Exception {
         try {
@@ -112,5 +144,4 @@ public class EC2InstanceController {
     public static int getLoad(){
         return currentLoad;
     }
-
 }

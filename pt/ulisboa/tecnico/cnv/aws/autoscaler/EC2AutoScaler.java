@@ -45,77 +45,40 @@ public class EC2AutoScaler {
      * credentials file in your source directory.
      */
 
-    private static ResourceBundle properties;
-    private static String REGION = "region";
-    private static String AUTO_SCALER_AMI_ID = "auto_scaler_ami_id";
-    private static String AUTO_SCALER_NAME = "auto_scaler_name";
-    private static String LOAD_BALANCER_NAME = "load_balancer_name";
-    private static String INSTANCE_TYPE = "instance_type";
-    private static String KEY_PAIR_NAME = "key_pair_name";
-    private static String SECURITY_GROUP = "security_group";
-    private static String IDLE_TIMEOUT = "idle_timeout";
 
-    public static void main(String[] args) throws Exception {
+    private static int MAXIMUM_NUMBER_OF_INSTANCES = 10;
+    private static int MINIMUM_NUMBER_OF_INSTANCES = 1;
+    private static int MAXIMUM_REQUEST_COMLPEXITY = 10;
 
-        init();
+    // ver isso depois
+    private static long MAXIMUM_LOAD_POSSIBLE = MAXIMUM_NUMBER_OF_INSTANCES * MAXIMUM_REQUEST_COMLPEXITY;
 
-        //final Region regionObject = new Region().withRegionName(properties.getString(REGION));
-        final String region = properties.getString(REGION);
-        final String amiID = properties.getString(AUTO_SCALER_AMI_ID);
-        final String securityGroup = properties.getString(SECURITY_GROUP);
-        final String keyPairName = properties.getString(KEY_PAIR_NAME);        
-        final String loadBalancerName = properties.getString(LOAD_BALANCER_NAME);
-        final Region regionObject = new Region().withRegionName(region);
-        int idleTimeout = 0;
+    private static long MINIMUM_LOAD_AVAILABLE = MINIMUM_NUMBER_OF_INSTANCES * MAXIMUM_REQUEST_COMLPEXITY;
 
-        try {
-            idleTimeout = parseInt(properties.getString(IDLE_TIMEOUT), 10);
+    private EC2InstancesManager manager;
 
-            // Set idle timeout to 60 seconds in case an invalid value is provided
-            if (idleTimeout <= 0) {
-                idleTimeout = 60;
+    public void run(){
+        if(manager.getNumberOfInstances() < MINIMUM_NUMBER_OF_INSTANCES){
+            manager.createInstance();
+        }
+        else{
+            if (manager.getNumberOfInstances() < MAXIMUM_NUMBER_OF_INSTANCES){
+                if (manager.getTotalAvailableLoad() < MINIMUM_LOAD_AVAILABLE){
+                    scaleUp();
+                }
             }
-        } catch (NumberFormatException ex) {
-            idleTimeout = 60;
         }
+    }  
 
-        EC2InstanceController.requestNewEC2Instance(AmazonClient.getEC2InstanceForRegion(regionObject));
-        //AutoScaling.createAutoScaling(region, amiID, securityGroup, keyPairName, loadBalancerName
-        try{
-                Thread.sleep(60000);
-            } catch (InterruptedException e) {e.printStackTrace();
-        }
-        EC2InstanceController.shutDownEC2Instance(AmazonClient.getEC2InstanceForRegion(regionObject));
-    }
 
-    private static void init() throws Exception {
-        try {
-            properties = ResourceBundle.getBundle("ec2", Locale.ENGLISH);
 
-            checkResourceBundleKeys(properties);
-        } catch (Exception ex) {
-            throw new AmazonClientException("Cannot load the properties file. "
-                    + "Please make sure that the \"ec2_en.properties\" file is at the correct "
-                    + "location, and is in valid format.", ex);
-        }
-    }
+    public void scaleUp() {
+        manager.createInstance();
+    }  
 
-    private static void checkResourceBundleKeys(ResourceBundle props) throws Exception {
-        // If the required properties exist and have a value
-        if (!(props.containsKey(REGION)
-                && props.containsKey(AUTO_SCALER_AMI_ID)
-                && props.containsKey(AUTO_SCALER_NAME)
-                && props.containsKey(INSTANCE_TYPE)
-                && props.containsKey(KEY_PAIR_NAME)
-                && props.containsKey(SECURITY_GROUP))
-            || !(!props.getString(REGION).isEmpty()
-                && !props.getString(AUTO_SCALER_AMI_ID).isEmpty()
-                && !props.getString(AUTO_SCALER_NAME).isEmpty()
-                && !props.getString(INSTANCE_TYPE).isEmpty()
-                && !props.getString(KEY_PAIR_NAME).isEmpty()
-                && !props.getString(SECURITY_GROUP).isEmpty())) {
-            throw new Exception("Cannot load properties from file or they have no value." +
-                    " Make sure all properties have been declared.");
+    public void scaleDown(String instanceID){
+        if (ec2instances.size() > MINIMUM_NUMBER_OF_INSTANCES) {
+            manager.deleteInstance(instanceID);
         }
     }
 

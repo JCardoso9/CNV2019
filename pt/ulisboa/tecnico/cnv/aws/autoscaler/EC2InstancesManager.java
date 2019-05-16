@@ -1,19 +1,22 @@
 package pt.ulisboa.tecnico.cnv.aws.autoscaler;
 
-import pt.ulisboa.tecnico.cnv.aws.observer.AbstractManagerObservableObserver;
+import pt.ulisboa.tecnico.cnv.aws.observer.AbstractManagerObservable;
 
 import java.util.*;
 
 
-public class EC2InstancesManager extends AbstractManagerObservableObserver {
+public class EC2InstancesManager extends AbstractManagerObservable {
 
 
 	static EC2InstancesManager  instance;
 
     String ec2InstanceID;
 
-    private EC2InstancesManager(List<Observable> instances) {
-        super(instances);
+    private HashMap<String, EC2InstanceController> ec2instances = new HashMap<String, EC2InstanceController>();
+    private HashMap<String, Integer> ec2instancesLoads = new HashMap<String, Integer>();
+
+
+    private EC2InstancesManager() {
         System.out.println("Starting instances manager...");
     }
 
@@ -25,11 +28,10 @@ public class EC2InstancesManager extends AbstractManagerObservableObserver {
         }
     };
 
-    private HashMap<String, EC2InstanceController> ec2instances = new HashMap<String, EC2InstanceController>();
 
     public synchronized static EC2InstancesManager getInstance() {
     	if (instance == null){ 
-    		instance = new EC2InstancesManager(null);
+    		instance = new EC2InstancesManager();
     	}
     	return instance;
     }
@@ -39,19 +41,29 @@ public class EC2InstancesManager extends AbstractManagerObservableObserver {
 
     public void addInstance(EC2InstanceController instance){
         ec2instances.put(instance.getInstanceID(), instance);
-/*        ec2instancesLoads.put(instance.getInstanceID(), 0);
-*/    }
+        ec2instancesLoads.put(instance.getInstanceID(), 0);
+    }
 
     public void removeInstance(EC2InstanceController instance){
         ec2instances.remove(instance.getInstanceID());
-/*        ec2instancesLoads.remove(instance.getInstanceID());        
-*/    }
+        ec2instancesLoads.remove(instance.getInstanceID());     
+    }
+
+
+    public List<String> getIdleInstances(){
+    	List<String> idleInstances = new ArrayList<String>();
+    	for (String instanceID : ec2instancesLoads.keySet()){
+            if (ec2instancesLoads.get(instanceID) == 0)
+            	idleInstances.add(instanceID);
+        }
+        return idleInstances;
+    }
 
 
     public int calculateTotalClusterLoad(){
     	int totalClusterLoad = 0;
-        for (EC2InstanceController instance : ec2instances.values()){
-            totalClusterLoad += instance.getLoad();
+        for (int load : ec2instancesLoads.values()){
+            totalClusterLoad += load;
         }
         return totalClusterLoad;
     }
@@ -81,6 +93,11 @@ public class EC2InstancesManager extends AbstractManagerObservableObserver {
         }
     }
 
+
+    public void markForShutdown(String instanceID){
+    	ec2instances.get(instanceID).markForShutdown();
+    }
+
    /* public void increaseTotalLoad(int newRequestLoad){
     	totalClusterLoad += newRequestLoad;
     }
@@ -101,8 +118,4 @@ public class EC2InstancesManager extends AbstractManagerObservableObserver {
         return bestInstance.getInstanceIP();
     }
 
-    @Override
-    public void updateInstancesList(EC2InstanceController instance, String[] complexityAndState) {
-        // TODO:
-    }
 }

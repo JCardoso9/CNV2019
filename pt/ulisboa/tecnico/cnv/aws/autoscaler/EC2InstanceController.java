@@ -31,7 +31,7 @@ public class EC2InstanceController extends AbstractInstanceObservable {
     private static int currentLoad = 0;
 
 
-    final static Region regionObject = new Region().withRegionName(properties.getString(REGION));
+    static Region regionObject;
 
     private EC2InstancesManager manager;
 
@@ -55,6 +55,7 @@ public class EC2InstanceController extends AbstractInstanceObservable {
             e.printStackTrace();
         }
 
+        regionObject = new Region().withRegionName(properties.getString(REGION));
         RunInstancesRequest runInstancesRequest =
                 new RunInstancesRequest();
 
@@ -75,6 +76,7 @@ public class EC2InstanceController extends AbstractInstanceObservable {
         String instanceId =instance.getInstanceId();
         String instanceIp = instance.getPublicIpAddress();
 
+        // while status not active blah blah
         System.out.println("EC2 instance created.");
 
 

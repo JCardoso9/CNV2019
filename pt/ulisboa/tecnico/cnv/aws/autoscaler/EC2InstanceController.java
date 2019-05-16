@@ -138,7 +138,15 @@ public class EC2InstanceController extends AbstractInstanceObservable {
         return currentLoad;
     }
 
+    public static void setLoad(int load){
+        currentLoad = load;
+    }
+
     public boolean isMarkedForShutdown(){
         return this.status == InstanceStatus.MarkedForShutdown;
+    }
+
+    public static void setStatus(InstanceStatus status){
+        status = status;
     }
 }

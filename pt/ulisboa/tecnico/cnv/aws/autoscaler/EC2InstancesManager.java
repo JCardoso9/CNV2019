@@ -3,12 +3,14 @@ package pt.ulisboa.tecnico.cnv.aws.autoscaler;
 import pt.ulisboa.tecnico.cnv.aws.observer.AbstractManagerObservableObserver;
 
 import java.util.*;
+import pt.ulisboa.tecnico.cnv.parser.Request;
 
 
 public class EC2InstancesManager extends AbstractManagerObservableObserver {
 
 
 	static EC2InstancesManager  instance;
+
 
     String ec2InstanceID;
 
@@ -24,7 +26,7 @@ public class EC2InstancesManager extends AbstractManagerObservableObserver {
 
     public synchronized static EC2InstancesManager getInstance() {
     	if (instance == null){ 
-    		instance = new EC2InstancesManager(null);
+    		instance = new EC2InstancesManager();
     	}
     	return instance;
     }
@@ -84,7 +86,7 @@ public class EC2InstancesManager extends AbstractManagerObservableObserver {
     	totalClusterLoad += newRequestLoad;
     }*/
 
-    public EC2InstanceController getInstanceWithSmallerLoad(){
+    public EC2InstanceController getInstanceWithSmallerLoad(Request request){
     	List<EC2InstanceController> instances = (List)ec2instances.values();
         Collections.sort(instances, instanceComparator);
         int bestIndex = 0;
@@ -93,11 +95,16 @@ public class EC2InstancesManager extends AbstractManagerObservableObserver {
             bestIndex++;
             bestInstance = instances.get(bestIndex);
         }
+        //Notify auto scaler
+        bestInstance.addNewRequest(request);
         return bestInstance;
     }
 
-    @Override
-    public void updateInstancesList(EC2InstanceController instance, String[] complexityAndState) {
-        // TODO:
+    public void removeRequest(String instanceID, Request request){
+        if (ec2instances.containsKey(instanceID)){
+            EC2InstanceController instance = ec2instances.get(instanceID);
+            instance.removeRequest(request);
+            //Notify auto scaler;
+        }
     }
 }

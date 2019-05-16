@@ -196,40 +196,48 @@ public class LoadBalancer implements Runnable{
 	static void SelectBestInstance(Request request, final HttpExchange t){
 		//Also check if instance is bound to be removed
 		try{
+			//Check tolerance failure
 			//If bestInstanceIp == null -> wait some seconds and retry
-			EC2InstanceController bestInstance = manager.getInstanceWithSmallerLoad();
-			bestInstance.addNewRequest(request);
-			String bestInstanceIp = bestInstanceIp.getInstanceIP();
+			EC2InstanceController bestInstance = manager.getInstanceWithSmallerLoad(request);
+			String bestInstanceIp = bestInstance.getInstanceIP();
 			URL url = new URL("http://" + bestInstanceIp + ":8000/climb?" + request.getRawQuery());
 			HttpURLConnection con = (HttpURLConnection) url.openConnection();
 			con.setRequestMethod("GET");
 
 			DataInputStream is = new DataInputStream((con.getInputStream()));
 	  		byte[] responseBytes = new byte[con.getContentLength()];
-	  		int bytes = 0;
-	  		while (bytes < con.getContentLength()){
-	  			bytes += is.read(responseBytes, bytes, responseBytes.length - bytes);
+	  		if (Math.floor(con.getResponseCode()/100) != 2){
+	  			//Something went wrong, need to re-ask for new instance to send request
 	  		}
+	  		else{
+		  		int bytes = 0;
+		  		while (bytes < con.getContentLength()){
+		  			bytes += is.read(responseBytes, bytes, responseBytes.length - bytes);
+		  		}
 
-	  		if (con != null){
-	  			con.disconnect();
-	  		}
-	  		bestInstance.removeRequest(request);
+		  		if (con != null){
+		  			con.disconnect();
+		  		}
+		  		manager.removeRequest(bestInstance.getInstanceID(), request);
 
-	  		final Headers hdrs = t.getResponseHeaders();
-			t.sendResponseHeaders(200, responseBytes.length);
-			hdrs.add("Content-Type", "image/png");
-			hdrs.add("Access-Control-Allow-Origin", "*");
-			hdrs.add("Access-Control-Allow-Credentials", "true");
-			hdrs.add("Access-Control-Allow-Methods", "POST, GET, HEAD, OPTIONS");
-			hdrs.add("Access-Control-Allow-Headers",
-					"Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
+		  		final Headers hdrs = t.getResponseHeaders();
+				t.sendResponseHeaders(200, responseBytes.length);
+				hdrs.add("Content-Type", "image/png");
+				hdrs.add("Access-Control-Allow-Origin", "*");
+				hdrs.add("Access-Control-Allow-Credentials", "true");
+				hdrs.add("Access-Control-Allow-Methods", "POST, GET, HEAD, OPTIONS");
+				hdrs.add("Access-Control-Allow-Headers",
+						"Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
 
 
-	  		final OutputStream os = t.getResponseBody();
-	        os.write(responseBytes);
-	        os.close();
+		  		final OutputStream os = t.getResponseBody();
+		        os.write(responseBytes);
+		        os.close();
+	        }
 
+		}catch(IOException e){
+			//Something went wrong, need to re-ask for new instance to send request
+			e.printStackTrace();
 		}catch(Exception e){
 			e.printStackTrace();
 		}

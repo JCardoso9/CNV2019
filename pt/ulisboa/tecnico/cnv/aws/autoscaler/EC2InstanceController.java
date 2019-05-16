@@ -3,14 +3,17 @@ package pt.ulisboa.tecnico.cnv.aws.autoscaler;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.ec2.model.*;
 import pt.ulisboa.tecnico.cnv.aws.AmazonClient;
+import pt.ulisboa.tecnico.cnv.aws.observer.AbstractInstanceObservable;
 import pt.ulisboa.tecnico.cnv.parser.Request;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 
 
-public class EC2InstanceController extends Observable {
-    private final List<Observer> observers = new ArrayList<>(2);
+public class EC2InstanceController extends AbstractInstanceObservable {
 
     enum InstanceStatus {
       Available,
@@ -130,21 +133,5 @@ public class EC2InstanceController extends Observable {
 
     public static int getLoad(){
         return currentLoad;
-    }
-
-    @Override
-    public synchronized void addObserver(Observer manager) {
-        super.addObserver(manager);
-
-        observers.add(manager);
-    }
-
-    @Override
-    public void notifyObservers(Object complexityAndState) {
-        super.notifyObservers(complexityAndState);
-
-        for (Observer observer: observers) {
-            observer.update(this, complexityAndState);
-        }
     }
 }

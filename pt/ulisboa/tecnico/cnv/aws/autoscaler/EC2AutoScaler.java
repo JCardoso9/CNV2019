@@ -28,12 +28,13 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 import pt.ulisboa.tecnico.cnv.aws.AmazonClient;
 import pt.ulisboa.tecnico.cnv.aws.balancer.*;
+import java.lang.Runnable;
 
 
 
 import static java.lang.Integer.parseInt;
 
-public class EC2AutoScaler {
+public class EC2AutoScaler implements Runnable{
 
     /*
      * Before running the code: Fill in your AWS access credentials in the provided
@@ -58,7 +59,7 @@ public class EC2AutoScaler {
     private EC2InstancesManager manager;
 
     public void run(){
-        if(manager.getNumberOfInstances() < MINIMUM_NUMBER_OF_INSTANCES){
+        /*if(manager.getNumberOfInstances() < MINIMUM_NUMBER_OF_INSTANCES){
             manager.createInstance();
         }
         else{
@@ -67,7 +68,7 @@ public class EC2AutoScaler {
                     scaleUp();
                 }
             }
-        }
+        }*/
     }  
 
 
@@ -77,9 +78,9 @@ public class EC2AutoScaler {
     }  
 
     public void scaleDown(String instanceID){
-        if (ec2instances.size() > MINIMUM_NUMBER_OF_INSTANCES) {
+        /*if (ec2instances.size() > MINIMUM_NUMBER_OF_INSTANCES) {
             manager.deleteInstance(instanceID);
-        }
+        }*/
     }
 
     

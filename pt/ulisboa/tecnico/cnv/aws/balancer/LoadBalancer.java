@@ -25,12 +25,14 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 
 import java.net.URL;
 import com.sun.net.httpserver.Headers;
 import java.net.HttpURLConnection;
+import java.lang.Runnable;
 
-public class LoadBalancer{
+public class LoadBalancer implements Runnable{
 	private static final int balancerPort = 8001;
 	private static LoadBalancer loadBalancer;
 	private static DynamoDBMapper mapper;
@@ -60,15 +62,26 @@ public class LoadBalancer{
 	}*/
 
 	public static void main(String[] args) throws Exception {
-		final HttpServer server = HttpServer.create(new InetSocketAddress(balancerPort), 0);
+		ExecutorService executor = Executors.newCachedThreadPool();
+		//server.setExecutor(Executors.newCachedThreadPool());
+		executor.submit(new EC2AutoScaler());
+		executor.submit(new LoadBalancer());
+	
+	}
+	public void run() {
+		try{
+			EC2InstancesManager manager = EC2InstancesManager.getInstance();
+			System.out.println(manager.toString());
+			final HttpServer server = HttpServer.create(new InetSocketAddress(balancerPort), 0);
 
-		server.createContext("/climb", new MyHandler());
-
-		server.setExecutor(Executors.newCachedThreadPool());
-		DynamoDBStorage.init();
-		mapper = DynamoDBStorage.mapper;
-		server.start();
-		System.out.println(server.getAddress().toString());
+			server.createContext("/climb", new MyHandler());
+			server.start();
+			System.out.println(server.getAddress().toString());
+			DynamoDBStorage.init();
+			mapper = DynamoDBStorage.mapper;
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 	}
 
 	
@@ -251,6 +264,7 @@ public class LoadBalancer{
     	private static String REGION = "region";
 
 		public MyHandler(){
+			
 			/*AWSStaticCredentialsProvider awsCredentials = new AWSStaticCredentialsProvider(new ProfileCredentialsProvider().getCredentials());
 			properties = ResourceBundle.getBundle("ec2", Locale.ENGLISH);
 

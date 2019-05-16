@@ -14,6 +14,7 @@ public class EC2InstancesManager extends AbstractManagerObservableObserver {
 
     private EC2InstancesManager(List<Observable> instances) {
         super(instances);
+        System.out.println("Starting instances manager...");
     }
 
     private static final Comparator<EC2InstanceController> instanceComparator = new Comparator<EC2InstanceController>() {
@@ -26,7 +27,7 @@ public class EC2InstancesManager extends AbstractManagerObservableObserver {
 
     private HashMap<String, EC2InstanceController> ec2instances = new HashMap<String, EC2InstanceController>();
 
-    public static EC2InstancesManager getInstance() {
+    public synchronized static EC2InstancesManager getInstance() {
     	if (instance == null){ 
     		instance = new EC2InstancesManager(null);
     	}
@@ -91,7 +92,13 @@ public class EC2InstancesManager extends AbstractManagerObservableObserver {
     public String getInstanceWithSmallerLoad(){
     	List<EC2InstanceController> instances = (List)ec2instances.values();
         Collections.sort(instances, instanceComparator);
-        return instances.get(0).getInstanceID();
+        int bestIndex = 0;
+        EC2InstanceController bestInstance = instances.get(bestIndex);
+        while (bestInstance.isMarkedForShutdown()){
+            bestIndex++;
+            bestInstance = instances.get(bestIndex);
+        }
+        return bestInstance.getInstanceIP();
     }
 
     @Override

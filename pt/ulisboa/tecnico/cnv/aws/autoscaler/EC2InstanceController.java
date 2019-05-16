@@ -20,6 +20,7 @@ public class EC2InstanceController extends AbstractInstanceObservable {
       MarkedForShutdown
     }
 
+    private InstanceStatus status = InstanceStatus.Available;
     private static ResourceBundle properties;
     private static String REGION = "region";
     private static String INSTANCE_AMI_ID = "instance_ami_id";
@@ -83,6 +84,8 @@ public class EC2InstanceController extends AbstractInstanceObservable {
 
     public String  getInstanceID() {return ec2InstanceID;}
 
+    public String getInstanceIP() {return ec2InstanceIP;}
+
 
     public void shutDownEC2Instance() {
         System.out.println("Shutting down instance with ID " + ec2InstanceID + "...");
@@ -133,5 +136,9 @@ public class EC2InstanceController extends AbstractInstanceObservable {
 
     public static int getLoad(){
         return currentLoad;
+    }
+
+    public boolean isMarkedForShutdown(){
+        return this.status == InstanceStatus.MarkedForShutdown;
     }
 }

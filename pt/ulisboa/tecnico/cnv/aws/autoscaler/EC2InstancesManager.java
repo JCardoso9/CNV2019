@@ -12,11 +12,6 @@ public class EC2InstancesManager extends AbstractManagerObservableObserver {
 
     String ec2InstanceID;
 
-    private EC2InstancesManager(List<Observable> instances) {
-        super(instances);
-        System.out.println("Starting instances manager...");
-    }
-
     private static final Comparator<EC2InstanceController> instanceComparator = new Comparator<EC2InstanceController>() {
         @Override
         public int compare(EC2InstanceController i1, EC2InstanceController i2) {
@@ -89,7 +84,7 @@ public class EC2InstancesManager extends AbstractManagerObservableObserver {
     	totalClusterLoad += newRequestLoad;
     }*/
 
-    public String getInstanceWithSmallerLoad(){
+    public EC2InstanceController getInstanceWithSmallerLoad(){
     	List<EC2InstanceController> instances = (List)ec2instances.values();
         Collections.sort(instances, instanceComparator);
         int bestIndex = 0;
@@ -98,7 +93,7 @@ public class EC2InstancesManager extends AbstractManagerObservableObserver {
             bestIndex++;
             bestInstance = instances.get(bestIndex);
         }
-        return bestInstance.getInstanceIP();
+        return bestInstance;
     }
 
     @Override

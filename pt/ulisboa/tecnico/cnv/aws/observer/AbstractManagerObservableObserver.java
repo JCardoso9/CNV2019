@@ -7,14 +7,6 @@ import java.util.*;
 public abstract class AbstractManagerObservableObserver extends Observable implements Observer {
     private final List<Observer> observers = new ArrayList<>(2);
 
-    public AbstractManagerObservableObserver(List<Observable> instances) {
-        if (instances == null) { return; }
-
-        for (Observable instance : instances) {
-            instance.addObserver(this);
-        }
-    }
-
     @Override
     public void update(Observable instance, Object o) {
         // An instance has changed

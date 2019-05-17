@@ -193,7 +193,7 @@ public class LoadBalancer implements Runnable{
 		return request;
 	}
 
-	static void SelectBestInstance(Request request, final HttpExchange t){
+	static void SelectBestInstanceAndSendRequest(Request request, final HttpExchange t){
 		//Also check if instance is bound to be removed
 		try{
 			//Check tolerance failure
@@ -207,6 +207,8 @@ public class LoadBalancer implements Runnable{
 			DataInputStream is = new DataInputStream((con.getInputStream()));
 	  		byte[] responseBytes = new byte[con.getContentLength()];
 	  		if (Math.floor(con.getResponseCode()/100) != 2){
+	  			manager.removeRequest(bestInstance.getInstanceID(), request);
+	  			SelectBestInstanceAndSendRequest(request, t);
 	  			//Something went wrong, need to re-ask for new instance to send request
 	  		}
 	  		else{
@@ -237,6 +239,7 @@ public class LoadBalancer implements Runnable{
 
 		}catch(IOException e){
 			//Something went wrong, need to re-ask for new instance to send request
+			SelectBestInstanceAndSendRequest(request, t);
 			e.printStackTrace();
 		}catch(Exception e){
 			e.printStackTrace();
@@ -271,7 +274,7 @@ public class LoadBalancer implements Runnable{
 			long threadId = Thread.currentThread().getId();
 			request = EstimateRequestComplexity(request);
 			//Maybe store these estimated complexity values in database.
-			SelectBestInstance(request,t);
+			SelectBestInstanceAndSendRequest(request,t);
 
 		}
 

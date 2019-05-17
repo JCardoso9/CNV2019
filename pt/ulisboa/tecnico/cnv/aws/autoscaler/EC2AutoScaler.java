@@ -154,7 +154,9 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
     }
 
     public void scaleUp() {
-        manager.createInstance();
+        if (manager.getNumberInstances() < EC2AutoScaler.MAXIMUM_NUMBER_OF_INSTANCES){
+            manager.createInstance();
+        }
     }  
 
     public void scaleDown(String instanceID){

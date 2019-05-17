@@ -110,7 +110,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
         Collections.sort(instances, instanceComparator);
         int bestIndex = 0;
         EC2InstanceController bestInstance = instances.get(bestIndex);
-        while (bestInstance.isMarkedForShutdown()){
+        while (bestInstance.isMarkedForShutdown() && bestIndex < instances.size()){
             bestIndex++;
             bestInstance = instances.get(bestIndex);
         }

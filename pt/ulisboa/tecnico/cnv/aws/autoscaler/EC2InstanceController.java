@@ -3,6 +3,8 @@ package pt.ulisboa.tecnico.cnv.aws.autoscaler;
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.ec2.model.*;
 import pt.ulisboa.tecnico.cnv.aws.AmazonClient;
+import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
+import com.amazonaws.services.ec2.AmazonEC2;
 import pt.ulisboa.tecnico.cnv.aws.observer.AbstractInstanceObservable;
 import pt.ulisboa.tecnico.cnv.parser.Request;
 
@@ -10,17 +12,27 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+
+import java.net.URL;
+import java.net.HttpURLConnection;
+import java.util.Timer;
+import java.util.TimerTask;
+
 
 
 
 public class EC2InstanceController extends AbstractInstanceObservable {
 
     enum InstanceStatus {
+      Pending,
       Available,
-      MarkedForShutdown
+      MarkedForShutdown,
+      Unhealthy
     }
 
-    private InstanceStatus status = InstanceStatus.Available;
+    private InstanceStatus status = InstanceStatus.Pending;
     private static ResourceBundle properties;
     private static String REGION = "region";
     private static String INSTANCE_AMI_ID = "instance_ami_id";
@@ -30,6 +42,8 @@ public class EC2InstanceController extends AbstractInstanceObservable {
     private static List<Request> requestList = new ArrayList<Request>();
     private static int currentLoad = 0;
 
+    private int STATUS_CHECK_INTERVAL =  10000;
+    private int PORT =  8000;
 
     static Region regionObject;
 
@@ -38,12 +52,16 @@ public class EC2InstanceController extends AbstractInstanceObservable {
     private String ec2InstanceID;
     private String ec2InstanceIP;
 
+    private String ec2InstanceAdress;
 
-    private EC2InstanceController(String ec2InstanceID, String ec2InstanceIP) {
+
+    private EC2InstanceController(String ec2InstanceID) {
         this.ec2InstanceID = ec2InstanceID;
-        this.ec2InstanceIP = ec2InstanceIP;
 
         manager = EC2InstancesManager.getInstance();
+
+        Timer timer = new Timer();
+        timer.schedule(new WaitForIP(ec2InstanceID), STATUS_CHECK_INTERVAL, STATUS_CHECK_INTERVAL);
 
     }
 
@@ -74,19 +92,21 @@ public class EC2InstanceController extends AbstractInstanceObservable {
         AmazonClient.getEC2InstanceForRegion(regionObject).runInstances(runInstancesRequest);
         Instance instance = runInstancesResult.getReservation().getInstances().get(0);
         String instanceId =instance.getInstanceId();
-        String instanceIp = instance.getPublicIpAddress();
 
-        // while status not active blah blah
+
         System.out.println("EC2 instance created.");
+        System.out.println("ID: " + instanceId);
 
 
-        return new EC2InstanceController(instanceId, instanceIp);
+        return new EC2InstanceController(instanceId);
     }
 
 
     public String  getInstanceID() {return ec2InstanceID;}
 
     public String getInstanceIP() {return ec2InstanceIP;}
+
+    public String getInstanceAdress() {return ec2InstanceAdress;}
 
 
     public void shutDownEC2Instance() {
@@ -155,5 +175,79 @@ public class EC2InstanceController extends AbstractInstanceObservable {
 
     public void reActivate(){
         this.status = InstanceStatus.Available;
+    }
+
+    public boolean checkHealth(){
+        try{
+            System.out.println("Checking instance " + ec2InstanceIP);
+            URL url = new URL("http://" + ec2InstanceAdress + "/test");
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(3000);
+            BufferedReader rd = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+            String aliveResponse = rd.readLine();
+            if(conn != null){
+                rd.close();
+                conn.disconnect();
+            }
+
+            System.out.println("Result " + !aliveResponse.isEmpty());
+            return !aliveResponse.isEmpty();
+
+        }catch(Exception e){
+            return false;
+        }
+    }
+
+    public void createInstanceAddress(String instanceIp){
+        ec2InstanceIP = instanceIp;
+        ec2InstanceAdress = instanceIp + ":" + PORT;
+    }
+
+    private DescribeInstancesResult describeInstance(AmazonEC2 client) {
+        DescribeInstancesRequest describeInstancesRequest = new DescribeInstancesRequest().withInstanceIds(ec2InstanceID);
+        DescribeInstancesResult describeInstancesResult = client.describeInstances(describeInstancesRequest);
+        return describeInstancesResult;
+    }
+
+
+    private boolean updateState(AmazonEC2 client){
+        DescribeInstancesResult describeInstancesResult = describeInstance(client);
+        InstanceState state = describeInstancesResult.getReservations().get(0).getInstances().get(0).getState();
+        if(state.getName().equals(InstanceStateName.Pending.toString())){
+            System.out.println("Pending: ");
+            this.status = InstanceStatus.Pending;
+            return false;
+        }
+        else if(state.getName().equals(InstanceStateName.Running.toString())){
+            createInstanceAddress(describeInstancesResult.getReservations().get(0).getInstances().get(0).getPublicIpAddress());
+            this.status = InstanceStatus.Available;
+            manager.addInstance(this);
+            System.out.println("Address: " + ec2InstanceAdress);
+            return true;
+        }
+        return false;
+    }
+
+
+
+    class WaitForIP extends TimerTask {
+
+        String instanceID;
+
+        public WaitForIP(String instanceID){
+            this.instanceID = instanceID;
+        }
+
+        public void run() {
+            System.out.println("Checking  worker active yet: " + instanceID);
+            if(status.equals(InstanceStatus.Pending)){
+                if (updateState(AmazonClient.getEC2InstanceForRegion(regionObject))) {
+                    this.cancel();
+                }
+            } else {
+                this.cancel();
+            }
+        }
     }
 }

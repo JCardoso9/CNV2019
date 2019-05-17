@@ -178,6 +178,5 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
         manager.deleteInstance(instanceID);
 
     }
-
     
 }

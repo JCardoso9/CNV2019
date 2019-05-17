@@ -115,15 +115,24 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     public EC2InstanceController getInstanceWithSmallerLoad(Request request){
     	List<EC2InstanceController> instances = (List)ec2instances.values();
         Collections.sort(instances, instanceComparator);
-        int bestIndex = 0;
-        EC2InstanceController bestInstance = instances.get(bestIndex);
-        while (bestInstance.isMarkedForShutdown() && bestIndex < instances.size()){
-            bestIndex++;
-            bestInstance = instances.get(bestIndex);
+        List<String> idleInstances = getIdleInstances();
+        if (instances.isEmpty()){
+            return null;
         }
-        //Notify auto scaler
-        bestInstance.addNewRequest(request);
-        return bestInstance;
+        else{
+            int bestIndex = 0;
+            EC2InstanceController bestInstance = instances.get(bestIndex);
+            while (bestInstance.isMarkedForShutdown() && bestIndex < instances.size()){
+                bestIndex++;
+                bestInstance = instances.get(bestIndex);
+            }
+            if (bestInstance.getLoad() > 0 && idleInstances.size() != 0){
+                bestInstance = ec2instances.get(idleInstances.get(0));
+                EC2AutoScaler.getInstance().quitShutdownProcedure(bestInstance.getInstanceID());
+            }
+            bestInstance.addNewRequest(request);
+            return bestInstance;
+        }
     }
 
     public void removeRequest(String instanceID, Request request){

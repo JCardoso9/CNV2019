@@ -199,6 +199,11 @@ public class LoadBalancer implements Runnable{
 			//Check tolerance failure
 			//If bestInstanceIp == null -> wait some seconds and retry
 			EC2InstanceController bestInstance = manager.getInstanceWithSmallerLoad(request);
+			while (bestInstance == null){
+				System.out.println("Could not obtain instance to send request to, waiting some seconds...");
+				Thread.sleep(5000);
+				bestInstance = manager.getInstanceWithSmallerLoad(request);
+			}
 			String bestInstanceIp = bestInstance.getInstanceIP();
 			URL url = new URL("http://" + bestInstanceIp + ":8000/climb?" + request.getRawQuery());
 			HttpURLConnection con = (HttpURLConnection) url.openConnection();

@@ -98,22 +98,22 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
         System.out.println("Starting instance...");
         scaleUp();
         try{
-            /*Thread.sleep(10000);
-            System.out.println("Starting 2nd instance...");
-            scaleUp();*/
-            Thread.sleep(10000);
-            int n = 5;
-            while (n > 0)
-            {System.out.println("Healthing...");
-                        manager.checkInstances();
-                        n-=1;
-                        Thread.sleep(5000);}
-            /*System.out.println("Terminate one");
-            Thread.sleep(40000);
-            manager.checkInstances();*/
-           /* System.out.println("Executing logic...");
-            executeAutoScalerLogic();*/
+        
+        Thread.sleep(20000);
         } catch (Exception e) {e.printStackTrace();}
+        System.out.println("Starting 2nd instance...");
+        scaleUp();
+       /* try{
+            Thread.sleep(10000);
+            System.out.println("Starting 2nd instance...");
+            scaleUp();
+            
+            System.out.println("Terminate one");
+            Thread.sleep(40000);
+            manager.checkInstances();
+            System.out.println("Executing logic...");
+            executeAutoScalerLogic();
+        } catch (Exception e) {e.printStackTrace();}*/
     }
 
     public void executeAutoScalerLogic(){

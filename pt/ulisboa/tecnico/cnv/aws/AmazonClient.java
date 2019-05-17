@@ -48,11 +48,11 @@ public class AmazonClient {
         return awsCredentials;
     }
 
-    public static AmazonEC2 getEC2InstanceForRegion(Region region) {
+    public static AmazonEC2 getEC2InstanceForRegion(String regionName) {
         if (ec2 == null) {
             ec2 = AmazonEC2ClientBuilder
                     .standard()
-                    .withRegion(region.getRegionName())
+                    .withRegion(regionName)
                     .withCredentials(getCredentials())
                     .build();
         }
@@ -72,11 +72,11 @@ public class AmazonClient {
         return elb;
     }
 
-    public static AmazonAutoScaling getASInstanceForRegion(Region region) {
+    public static AmazonAutoScaling getASInstanceForRegion(String regionName) {
         if (as == null) {
             as = AmazonAutoScalingClientBuilder
                     .standard()
-                    .withRegion(region.getRegionName())
+                    .withRegion(regionName)
                     .withCredentials(getCredentials())
                     .build();
         }

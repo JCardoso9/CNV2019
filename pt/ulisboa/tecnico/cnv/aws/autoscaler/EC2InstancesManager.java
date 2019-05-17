@@ -4,7 +4,11 @@ import pt.ulisboa.tecnico.cnv.aws.observer.AbstractManagerObservable;
 
 import java.util.*;
 import pt.ulisboa.tecnico.cnv.parser.Request;
+
 import pt.ulisboa.tecnico.cnv.aws.observer.*;
+
+import java.util.TimerTask;
+
 
 
 public class EC2InstancesManager extends AbstractManagerObservable {
@@ -12,12 +16,15 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
 	static EC2InstancesManager  instance;
 
+	int MAXIMUM_FAILED_HEALTH_CHECKS = 3;
+	int SECONDS_BETWEEN_HEALTH_CHECKS = 40;
+
 
     String ec2InstanceID;
 
 
     private HashMap<String, EC2InstanceController> ec2instances = new HashMap<String, EC2InstanceController>();
-    private HashMap<String, Integer> ec2InstancesFailedHealthCheck = new HashMap<String, Integer>();
+    private HashMap<String, Integer> ec2InstancesHealth = new HashMap<String, Integer>();
 /*    private HashMap<String, Integer> ec2instancesLoads = new HashMap<String, Integer>();
 */
 
@@ -28,6 +35,11 @@ public class EC2InstancesManager extends AbstractManagerObservable {
             return smallestLoad;
         }
     };
+
+    private EC2InstancesManager() {
+    	Timer timer = new Timer();
+        timer.schedule(new RunHealthCheckTimer(), SECONDS_BETWEEN_HEALTH_CHECKS * 1000, 50000);
+    }
 
 
     public synchronized static EC2InstancesManager getInstance() {
@@ -87,8 +99,8 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     }
 
 
-    public void createInstance() {
-        EC2InstanceController.requestNewEC2Instance();
+    public EC2InstanceController createInstance() {
+        return EC2InstanceController.requestNewEC2Instance();
     }
 
 
@@ -160,10 +172,42 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     }
 
 
-
-    public void checkInstances(){
+    public synchronized void  checkInstances(){
     	for (EC2InstanceController instance : ec2instances.values()){
+    		System.out.println("Pinging " + instance.getInstanceID());
         	boolean healthy = instance.checkHealth();
+        	System.out.println("Healthy:  " + healthy);
+        	updateHealthInstance(instance.getInstanceID(), healthy);
         }
     }
+
+    public synchronized void  updateHealthInstance(String instanceID, boolean healthy){
+    	if (!ec2InstancesHealth.containsKey(instanceID)) ec2InstancesHealth.put(instanceID,0);
+
+    	else {
+	    	int nrFailedChecks = ec2InstancesHealth.get(instanceID);
+
+	    	if (healthy){
+	    		if (nrFailedChecks > 0) ec2InstancesHealth.put(instanceID, 0);
+	    	}
+
+	    	else{
+	    		if (nrFailedChecks == MAXIMUM_FAILED_HEALTH_CHECKS - 1){
+	    			ec2instances.remove(instanceID);
+	    			ec2InstancesHealth.remove(instanceID);
+	    		}
+	    		else ec2InstancesHealth.put(instanceID, nrFailedChecks + 1);
+	    	}
+	    }
+    }
+
+    class RunHealthCheckTimer extends TimerTask {
+
+        public void run() {
+            System.out.println("Running health check...");
+            if (!ec2instances.isEmpty()) checkInstances();
+        }
+    }
+
+    
 }

@@ -68,14 +68,14 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
 
     private static long MINIMUM_LOAD_AVAILABLE = MINIMUM_NUMBER_OF_INSTANCES * MAXIMUM_REQUEST_COMPLEXITY;
 
-    private int NUMBER_OF_SECONDS_BEFORE_SHUTDOWN = 30 * 1000;
+    private int NUMBER_OF_MILISECONDS_BEFORE_SHUTDOWN = 30 * 1000;
 
     private EC2InstancesManager manager;
 
     static EC2AutoScaler  instance;
 
 
-    private HashMap<String, Integer> idleInstances = new HashMap<String, Integer>();
+    private List<String> idleInstances = new ArrayList<String>();
 
     private HashMap<String, Timer> timers = new HashMap<String, Timer>();
 
@@ -84,16 +84,7 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
         super(EC2InstancesManager.getInstance());
 
         manager = EC2InstancesManager.getInstance();
-        System.out.println("Starting instance...");
-        scaleUp();
-        try{
-            Thread.sleep(60000);
-            System.out.println("Starting 2nd instance...");
-            scaleUp();
-            Thread.sleep(60000);
-            System.out.println("Executing logic...");
-            executeAutoScalerLogic();
-        } catch (Exception e) {e.printStackTrace();}
+        
     }
 
     public synchronized static EC2AutoScaler getInstance() {
@@ -104,12 +95,29 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
     }
 
     public void run(){
-
+        System.out.println("Starting instance...");
+        scaleUp();
+        try{
+            /*Thread.sleep(10000);
+            System.out.println("Starting 2nd instance...");
+            scaleUp();*/
+            Thread.sleep(10000);
+            int n = 5;
+            while (n > 0)
+            {System.out.println("Healthing...");
+                        manager.checkInstances();
+                        n-=1;
+                        Thread.sleep(5000);}
+            /*System.out.println("Terminate one");
+            Thread.sleep(40000);
+            manager.checkInstances();*/
+           /* System.out.println("Executing logic...");
+            executeAutoScalerLogic();*/
+        } catch (Exception e) {e.printStackTrace();}
     }
 
     public void executeAutoScalerLogic(){
         if(manager.getNumberInstances() < MINIMUM_NUMBER_OF_INSTANCES){
-
             scaleUp();
         }
 
@@ -120,6 +128,7 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
                 if (manager.getClusterAvailableLoad() < MINIMUM_LOAD_AVAILABLE){
                     scaleUp();
                 }
+
             }
 
             
@@ -127,14 +136,20 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
             List<String> updatedIdleInstances = manager.getIdleInstances();
             System.out.println("Idle: " + updatedIdleInstances);
             markForShutdown(updatedIdleInstances);
+
+            //just for testing
+            try{
+                Thread.sleep(10000);
+            } catch (Exception e) {e.printStackTrace();}    
+            quitShutdownProcedure(updatedIdleInstances.get(0));
         }
     } 
 
     public void markForShutdown(List<String> updatedIdleInstances){
         for (String instanceID : updatedIdleInstances){
-            if (!idleInstances.containsKey(instanceID)){
+            if (!idleInstances.contains(instanceID)){
                 System.out.println("Marking " + instanceID + " for shutdown...");
-                idleInstances.put(instanceID, 0);
+                idleInstances.add(instanceID);
                 manager.markForShutdown(instanceID);
                 startShutdownProcedure(instanceID);
             }
@@ -142,19 +157,19 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
     }
 
     public void startShutdownProcedure(String instanceID){
-        if (idleInstances.containsKey(instanceID) && idleInstances.get(instanceID) == 0){
+        if (idleInstances.contains(instanceID)){
             Timer timer = new Timer();
-            timer.schedule(new ShutdownTimer(instanceID), NUMBER_OF_SECONDS_BEFORE_SHUTDOWN);
+            timer.schedule(new ShutdownTimer(instanceID), NUMBER_OF_MILISECONDS_BEFORE_SHUTDOWN);
             timers.put(instanceID, timer);
             System.out.println("Started timer...");
-            idleInstances.put(instanceID, 1);
         }
     }
 
     public void quitShutdownProcedure(String instanceID) {
-        if (timers.containsKey(instanceID)  && idleInstances.containsKey(instanceID)){
+        if (timers.containsKey(instanceID)  && idleInstances.contains(instanceID)){
             idleInstances.remove(instanceID);
             timers.get(instanceID).cancel();
+            manager.reActivate(instanceID);
             System.out.println("Shutdown for " + instanceID + " has been canceled");
         }
         else{
@@ -164,7 +179,7 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
 
 
     public boolean isInstanceIdle(String instanceID){
-        return idleInstances.containsKey(instanceID);
+        return idleInstances.contains(instanceID);
     }
 
     public void scaleUp() {
@@ -178,5 +193,8 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
         manager.deleteInstance(instanceID);
 
     }
+
+
+
     
 }

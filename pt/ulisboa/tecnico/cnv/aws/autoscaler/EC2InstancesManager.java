@@ -17,6 +17,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
 
     private HashMap<String, EC2InstanceController> ec2instances = new HashMap<String, EC2InstanceController>();
+    private HashMap<String, Integer> ec2InstancesFailedHealthCheck = new HashMap<String, Integer>();
 /*    private HashMap<String, Integer> ec2instancesLoads = new HashMap<String, Integer>();
 */
 
@@ -65,6 +66,8 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     }
 
 
+
+
     public int calculateTotalClusterLoad(){
     	int totalClusterLoad = 0;
         /*for (int load : ec2instancesLoads.values()){
@@ -84,10 +87,8 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     }
 
 
-    public EC2InstanceController createInstance() {
-        EC2InstanceController newInstance = EC2InstanceController.requestNewEC2Instance();
-        addInstance(newInstance);
-        return newInstance;
+    public void createInstance() {
+        EC2InstanceController.requestNewEC2Instance();
     }
 
 
@@ -105,6 +106,10 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
     public void markForShutdown(String instanceID){
     	ec2instances.get(instanceID).markForShutdown();
+    }
+
+    public void reActivate(String instanceID){
+    	ec2instances.get(instanceID).reActivate();
     }
 
    /* public void increaseTotalLoad(int newRequestLoad){
@@ -151,6 +156,14 @@ public class EC2InstancesManager extends AbstractManagerObservable {
             instance.removeRequest(request);
             //Notify auto scaler;
             EC2AutoScaler.getInstance().update(this, this);
+        }
+    }
+
+
+
+    public void checkInstances(){
+    	for (EC2InstanceController instance : ec2instances.values()){
+        	boolean healthy = instance.checkHealth();
         }
     }
 }

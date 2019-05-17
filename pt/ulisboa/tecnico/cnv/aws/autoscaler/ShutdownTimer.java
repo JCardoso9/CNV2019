@@ -13,6 +13,7 @@ public class ShutdownTimer extends TimerTask {
 
     public void run(){
         if( EC2AutoScaler.getInstance().isInstanceIdle(instanceID)){
+            System.out.println("Terminating instance " + instanceID);
             EC2AutoScaler.getInstance().scaleDown(instanceID);
         }
     }

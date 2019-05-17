@@ -16,8 +16,8 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
 
     private HashMap<String, EC2InstanceController> ec2instances = new HashMap<String, EC2InstanceController>();
-    private HashMap<String, Integer> ec2instancesLoads = new HashMap<String, Integer>();
-
+/*    private HashMap<String, Integer> ec2instancesLoads = new HashMap<String, Integer>();
+*/
 
     private static final Comparator<EC2InstanceController> instanceComparator = new Comparator<EC2InstanceController>() {
         @Override
@@ -40,20 +40,25 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
     public void addInstance(EC2InstanceController instance){
         ec2instances.put(instance.getInstanceID(), instance);
-        ec2instancesLoads.put(instance.getInstanceID(), 0);
-    }
+/*        ec2instancesLoads.put(instance.getInstanceID(), 0);
+*/    }
 
     public void removeInstance(EC2InstanceController instance){
         ec2instances.remove(instance.getInstanceID());
-        ec2instancesLoads.remove(instance.getInstanceID());     
-    }
+/*        ec2instancesLoads.remove(instance.getInstanceID());     
+*/    }
 
 
     public List<String> getIdleInstances(){
     	List<String> idleInstances = new ArrayList<String>();
-    	for (String instanceID : ec2instancesLoads.keySet()){
+    	/*for (String instanceID : ec2instancesLoads.keySet()){
             if (ec2instancesLoads.get(instanceID) == 0)
             	idleInstances.add(instanceID);
+        }*/
+        for (EC2InstanceController instance : ec2instances.values()){
+        	if (instance.getLoad() == 0) {
+        		idleInstances.add(instance.getInstanceID());
+        	}
         }
         return idleInstances;
     }
@@ -61,8 +66,11 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
     public int calculateTotalClusterLoad(){
     	int totalClusterLoad = 0;
-        for (int load : ec2instancesLoads.values()){
+        /*for (int load : ec2instancesLoads.values()){
             totalClusterLoad += load;
+        }*/
+        for (EC2InstanceController instance : ec2instances.values()){
+        	totalClusterLoad += instance.getLoad();
         }
         return totalClusterLoad;
     }
@@ -76,8 +84,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
 
     public void createInstance() {
-        EC2InstanceController instance = EC2InstanceController.requestNewEC2Instance();
-        addInstance(instance);
+        addInstance(EC2InstanceController.requestNewEC2Instance());
     }
 
 

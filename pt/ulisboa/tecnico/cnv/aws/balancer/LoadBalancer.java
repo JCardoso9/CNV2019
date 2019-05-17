@@ -45,7 +45,7 @@ public class LoadBalancer implements Runnable{
 	public static void main(String[] args) throws Exception {
 		ExecutorService executor = Executors.newCachedThreadPool();
 		//server.setExecutor(Executors.newCachedThreadPool());
-		executor.submit(new EC2AutoScaler());
+		executor.submit(EC2AutoScaler.getInstance());
 		executor.submit(new LoadBalancer());
 	
 	}

@@ -61,12 +61,12 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
 
     private static int MAXIMUM_NUMBER_OF_INSTANCES = 10;
     private static int MINIMUM_NUMBER_OF_INSTANCES = 1;
-    private static int MAXIMUM_REQUEST_COMLPEXITY = 10;
+    public static int MAXIMUM_REQUEST_COMPLEXITY = 10;
 
     // ver isso depois
-    private static long MAXIMUM_LOAD_POSSIBLE = MAXIMUM_NUMBER_OF_INSTANCES * MAXIMUM_REQUEST_COMLPEXITY;
+    private static long MAXIMUM_LOAD_POSSIBLE = MAXIMUM_NUMBER_OF_INSTANCES * MAXIMUM_REQUEST_COMPLEXITY;
 
-    private static long MINIMUM_LOAD_AVAILABLE = MINIMUM_NUMBER_OF_INSTANCES * MAXIMUM_REQUEST_COMLPEXITY;
+    private static long MINIMUM_LOAD_AVAILABLE = MINIMUM_NUMBER_OF_INSTANCES * MAXIMUM_REQUEST_COMPLEXITY;
 
     private int NUMBER_OF_SECONDS_BEFORE_SHUTDOWN = 30 * 1000;
 

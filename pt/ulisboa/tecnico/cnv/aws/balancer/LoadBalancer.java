@@ -213,6 +213,7 @@ public class LoadBalancer implements Runnable{
 	  		byte[] responseBytes = new byte[con.getContentLength()];
 	  		if (Math.floor(con.getResponseCode()/100) != 2){
 	  			manager.removeRequest(bestInstance.getInstanceID(), request);
+	  			con.disconnect();
 	  			SelectBestInstanceAndSendRequest(request, t);
 	  			//Something went wrong, need to re-ask for new instance to send request
 	  		}

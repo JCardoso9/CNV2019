@@ -4,6 +4,7 @@ import pt.ulisboa.tecnico.cnv.aws.observer.AbstractManagerObservable;
 
 import java.util.*;
 import pt.ulisboa.tecnico.cnv.parser.Request;
+import pt.ulisboa.tecnico.cnv.aws.observer.*;
 
 
 public class EC2InstancesManager extends AbstractManagerObservable {
@@ -83,8 +84,10 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     }
 
 
-    public void createInstance() {
-        addInstance(EC2InstanceController.requestNewEC2Instance());
+    public EC2InstanceController createInstance() {
+        EC2InstanceController newInstance = EC2InstanceController.requestNewEC2Instance();
+        addInstance(newInstance);
+        return newInstance;
     }
 
 
@@ -130,7 +133,14 @@ public class EC2InstancesManager extends AbstractManagerObservable {
                 bestInstance = ec2instances.get(idleInstances.get(0));
                 EC2AutoScaler.getInstance().quitShutdownProcedure(bestInstance.getInstanceID());
             }
+            if (bestInstance.getLoad() + request.getEstimatedCost() > EC2AutoScaler.MAXIMUM_REQUEST_COMPLEXITY){
+                //Should be through auto scaler
+                EC2InstanceController newInstance = createInstance();
+                newInstance.addNewRequest(request);
+                return newInstance;
+            }
             bestInstance.addNewRequest(request);
+
             return bestInstance;
         }
     }
@@ -140,6 +150,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
             EC2InstanceController instance = ec2instances.get(instanceID);
             instance.removeRequest(request);
             //Notify auto scaler;
+            EC2AutoScaler.getInstance().update(this, this);
         }
     }
 }

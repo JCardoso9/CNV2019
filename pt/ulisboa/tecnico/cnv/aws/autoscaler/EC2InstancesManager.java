@@ -125,6 +125,10 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     	return isInstanceBeingCreated;
     }
 
+    public int getLoadOfInstance(String instanceID){
+    	return ec2instances.get(instanceID).getLoad();
+    }
+
 
     public void markForShutdown(String instanceID){
     	ec2instances.get(instanceID).markForShutdown();

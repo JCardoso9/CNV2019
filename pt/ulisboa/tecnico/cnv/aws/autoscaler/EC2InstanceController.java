@@ -41,7 +41,7 @@ public class EC2InstanceController extends AbstractInstanceObservable {
     private static String KEY_PAIR_NAME = "key_pair_name";
     private static String SECURITY_GROUP = "security_group";
     private static List<Request> requestList = new ArrayList<Request>();
-    private static int currentLoad = 0;
+    private int currentLoad = 0;
 
     private static String region;
 
@@ -151,26 +151,18 @@ public class EC2InstanceController extends AbstractInstanceObservable {
         }
     }
 
-    public static synchronized void addNewRequest(Request request){
+    public synchronized void addNewRequest(Request request){
         currentLoad += request.getEstimatedCost();
         requestList.add(request);
     }
 
-    public static synchronized void removeRequest(Request request){
+    public synchronized void removeRequest(Request request){
         currentLoad -= request.getEstimatedCost();
         requestList.remove(request);
     }
 
-    public static int getLoad(){
+    public synchronized int getLoad(){
         return currentLoad;
-    }
-
-    public static synchronized void addLoad(int load){
-        currentLoad += load;
-    }
-
-    public static synchronized void decreaseLoad(int load){
-        currentLoad -= load;
     }
 
     public boolean isMarkedForShutdown(){

@@ -43,7 +43,7 @@ public class LoadBalancer implements Runnable{
 	private static EC2InstancesManager manager;
 
 	public static void main(String[] args) throws Exception {
-		ExecutorService executor = Executors.newCachedThreadPool();
+		ExecutorService executor = Executors.newFixedThreadPool(2);
 		//server.setExecutor(Executors.newCachedThreadPool());
 		executor.submit(EC2AutoScaler.getInstance());
 		executor.submit(new LoadBalancer());
@@ -54,6 +54,7 @@ public class LoadBalancer implements Runnable{
 			final HttpServer server = HttpServer.create(new InetSocketAddress(balancerPort), 0);
 
 			server.createContext("/climb", new MyHandler());
+			server.setExecutor(Executors.newCachedThreadPool());
 			server.start();
 			System.out.println(server.getAddress().toString());
 			DynamoDBStorage.init();
@@ -183,9 +184,11 @@ public class LoadBalancer implements Runnable{
 			System.out.println("Nothing in db ");
 			//Estimate cost.
 			double mapArea = (request.getX1()-request.getX0())*(request.getY1()-request.getY0());
+			double areaRatio = mapArea/largestMapArea;
 			double distanceWorstCase = CalculateWorstCaseDistance(request.getX0(),request.getX1(),request.getY0(),request.getY1(),request.Xs(),request.Ys());
+			double distanceRatio = distanceWorstCase/distanceLargestMap;
 			//This is incorrect and can give values above n, need to rethink formula;
-			long cost = Math.round(((distanceWorstCase*mapArea) / (largestMapArea* distanceLargestMap))*n);
+			long cost = Math.round(((areaRatio + distanceRatio)/2)*n);
 			request.setEstimatedCost(cost);
 			System.out.println("Cost : " + Long.toString(cost));
 			
@@ -206,12 +209,14 @@ public class LoadBalancer implements Runnable{
 			}
 			String bestInstanceIp = bestInstance.getInstanceIP();
 			URL url = new URL("http://" + bestInstanceIp + ":8000/climb?" + request.getRawQuery());
+			System.out.println("http://" + bestInstanceIp + ":8000/climb?" + request.getRawQuery());
 			HttpURLConnection con = (HttpURLConnection) url.openConnection();
 			con.setRequestMethod("GET");
-
+			System.out.println("Sent request");
 			DataInputStream is = new DataInputStream((con.getInputStream()));
 	  		byte[] responseBytes = new byte[con.getContentLength()];
 	  		if (Math.floor(con.getResponseCode()/100) != 2){
+	  			System.out.println("Error code : " + con.getResponseCode());
 	  			manager.removeRequest(bestInstance.getInstanceID(), request);
 	  			con.disconnect();
 	  			SelectBestInstanceAndSendRequest(request, t);
@@ -221,9 +226,12 @@ public class LoadBalancer implements Runnable{
 		  		int bytes = 0;
 		  		while (bytes < con.getContentLength()){
 		  			bytes += is.read(responseBytes, bytes, responseBytes.length - bytes);
+		  			System.out.println("Getting bytes...");
 		  		}
+		  		System.out.println("Received response");
 
 		  		if (con != null){
+		  			System.out.println("Closing connection");
 		  			con.disconnect();
 		  		}
 		  		manager.removeRequest(bestInstance.getInstanceID(), request);

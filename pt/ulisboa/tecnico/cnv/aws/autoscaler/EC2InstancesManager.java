@@ -37,8 +37,8 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     };
 
     private EC2InstancesManager() {
-    	Timer timer = new Timer();
-        timer.schedule(new RunHealthCheckTimer(), SECONDS_BETWEEN_HEALTH_CHECKS * 1000, 50000);
+    	//Timer timer = new Timer();
+        //timer.schedule(new RunHealthCheckTimer(), SECONDS_BETWEEN_HEALTH_CHECKS * 1000, 50000);
     }
 
 
@@ -101,6 +101,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
     public EC2InstanceController createInstance() {
         return EC2InstanceController.requestNewEC2Instance();
+
     }
 
 
@@ -132,14 +133,19 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     	totalClusterLoad += newRequestLoad;
     }*/
 
-    public EC2InstanceController getInstanceWithSmallerLoad(Request request){
-    	List<EC2InstanceController> instances = (List)ec2instances.values();
+    public synchronized EC2InstanceController getInstanceWithSmallerLoad(Request request){
+        System.out.println("Getting best request");
+    	ArrayList<EC2InstanceController> instances = new ArrayList<EC2InstanceController>(ec2instances.values());
+        System.out.println("SIze : " + instances.size());
         Collections.sort(instances, instanceComparator);
         List<String> idleInstances = getIdleInstances();
         if (instances.isEmpty()){
             return null;
         }
         else{
+            for (EC2InstanceController instance : instances){
+                System.out.println("Instance ID: " + instance.getInstanceID() + "Instance load : " + instance.getLoad());
+            }
             int bestIndex = 0;
             EC2InstanceController bestInstance = instances.get(bestIndex);
             while (bestInstance.isMarkedForShutdown() && bestIndex < instances.size()){
@@ -153,6 +159,13 @@ public class EC2InstancesManager extends AbstractManagerObservable {
             if (bestInstance.getLoad() + request.getEstimatedCost() > EC2AutoScaler.MAXIMUM_REQUEST_COMPLEXITY){
                 //Should be through auto scaler
                 EC2InstanceController newInstance = createInstance();
+                while (newInstance.isPending()){
+                    try{
+                        Thread.sleep(5000);
+                    }catch(Exception e){
+                        e.printStackTrace();
+                    }
+                }
                 newInstance.addNewRequest(request);
                 return newInstance;
             }

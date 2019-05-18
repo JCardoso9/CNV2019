@@ -71,9 +71,7 @@ public class EC2InstanceController extends AbstractInstanceObservable {
 
         try {
             init();
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
+        
 
 /*        region = new Region().withRegionName(properties.getString(REGION));
 */        region = properties.getString(REGION);
@@ -100,6 +98,10 @@ public class EC2InstanceController extends AbstractInstanceObservable {
 
 
         return new EC2InstanceController(instanceId);
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
 
@@ -149,11 +151,13 @@ public class EC2InstanceController extends AbstractInstanceObservable {
         }
     }
 
-    public static void addNewRequest(Request request){
+    public static synchronized void addNewRequest(Request request){
+        currentLoad += request.getEstimatedCost();
         requestList.add(request);
     }
 
-    public static void removeRequest(Request request){
+    public static synchronized void removeRequest(Request request){
+        currentLoad -= request.getEstimatedCost();
         requestList.remove(request);
     }
 
@@ -161,8 +165,12 @@ public class EC2InstanceController extends AbstractInstanceObservable {
         return currentLoad;
     }
 
-    public static void setLoad(int load){
-        currentLoad = load;
+    public static synchronized void addLoad(int load){
+        currentLoad += load;
+    }
+
+    public static synchronized void decreaseLoad(int load){
+        currentLoad -= load;
     }
 
     public boolean isMarkedForShutdown(){
@@ -173,8 +181,8 @@ public class EC2InstanceController extends AbstractInstanceObservable {
         this.status = InstanceStatus.MarkedForShutdown;
     }
 
-    public void isPending(){
-        this.status = InstanceStatus.Pending;
+    public boolean isPending(){
+        return this.status == InstanceStatus.Pending;
     }
 
     public void reActivate(){
@@ -241,6 +249,4 @@ public class EC2InstanceController extends AbstractInstanceObservable {
             }
         }
     }
-
-    
 }

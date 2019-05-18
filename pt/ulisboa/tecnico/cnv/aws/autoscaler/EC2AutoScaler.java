@@ -135,13 +135,7 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
             //check if scale down is needed
             List<String> updatedIdleInstances = manager.getIdleInstances();
             System.out.println("Idle: " + updatedIdleInstances);
-            markForShutdown(updatedIdleInstances);
-
-            //just for testing
-            try{
-                Thread.sleep(10000);
-            } catch (Exception e) {e.printStackTrace();}    
-            quitShutdownProcedure(updatedIdleInstances.get(0));
+            markForShutdown(updatedIdleInstances); 
         }
     } 
 
@@ -193,8 +187,4 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
         manager.deleteInstance(instanceID);
 
     }
-
-
-
-    
 }

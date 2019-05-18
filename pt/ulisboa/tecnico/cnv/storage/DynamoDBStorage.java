@@ -56,6 +56,9 @@ public class DynamoDBStorage{
 	            .withRegion(Regions.US_EAST_1)
 	            .build();
         mapper = new DynamoDBMapper(dynamoDB);
+        //DeleteTableRequest deleteTableRequest = mapper.generateDeleteTableRequest(RequestMapping.class);
+        //TableUtils.deleteTableIfExists(dynamoDB, deleteTableRequest);
+        //System.out.println("Deleted table");
 	    CreateTableRequest createTableRequest = mapper.generateCreateTableRequest(RequestMapping.class);
         createTableRequest.setProvisionedThroughput(new ProvisionedThroughput(5L, 5L));
         TableUtils.createTableIfNotExists(dynamoDB, createTableRequest);

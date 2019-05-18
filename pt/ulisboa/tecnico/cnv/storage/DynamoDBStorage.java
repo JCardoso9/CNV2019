@@ -26,13 +26,28 @@ import com.amazonaws.services.dynamodbv2.model.ScanResult;
 import com.amazonaws.services.dynamodbv2.model.TableDescription;
 import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBScanExpression;
 import com.amazonaws.services.dynamodbv2.util.TableUtils;
+import com.amazonaws.services.dynamodbv2.datamodeling.DynamoDBMappingException;
 import java.util.*;
 import pt.ulisboa.tecnico.cnv.parser.*;
 
 public class DynamoDBStorage{
+    public static DynamoDBStorage storage = new DynamoDBStorage();
 	public static AmazonDynamoDB dynamoDB;
 	public static DynamoDBMapper mapper;
 	static Map<Long, Request> requestInformation = new HashMap<>();
+
+
+    public DynamoDBStorage(){
+        try{
+            init();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
+
+    public static DynamoDBStorage getInstance(){
+        return storage;
+    }
 
 	public static void init() throws Exception {
         String tableName = "Requests";
@@ -70,17 +85,26 @@ public class DynamoDBStorage{
 
     //Decide which metric to store
     public static void storeMetricsGathered(long threadID, long metric){
+        System.out.println("Storing in db...");
+        try{
     	Request correspondingRequest = requestInformation.get(threadID);
     	RequestMapping mappedRequest = mapper.load(RequestMapping.class, correspondingRequest.getDataset(),correspondingRequest.getRequestId());
     	//Already exists in DB
     	if (mappedRequest == null){
     		mappedRequest = new RequestMapping();
+            System.out.println("Creating request mapping");
     		mappedRequest.setRequest(correspondingRequest);
     	}
+        System.out.println("Metric : " + metric);
 		mappedRequest.setMetric(metric);
-		//Save updated isntance into database
-        System.out.println(mappedRequest);
+        System.out.println("Saving");
 		mapper.save(mappedRequest);
+        }catch (DynamoDBMappingException e){
+            System.out.println(e.getMessage());
+            System.out.println(e.getCause());
+        }catch(Exception e){
+            e.printStackTrace();
+        }
     }	
 
     //Need to store the estimates for new requests aswell.

@@ -57,8 +57,8 @@ public class LoadBalancer implements Runnable{
 			server.setExecutor(Executors.newCachedThreadPool());
 			server.start();
 			System.out.println(server.getAddress().toString());
-			DynamoDBStorage.init();
-			mapper = DynamoDBStorage.mapper;
+			mapper = DynamoDBStorage.getInstance().mapper;
+			
 			manager = EC2InstancesManager.getInstance();
 		}catch(Exception e){
 			e.printStackTrace();
@@ -197,14 +197,14 @@ public class LoadBalancer implements Runnable{
 	}
 
 	static void SelectBestInstanceAndSendRequest(Request request, final HttpExchange t){
+		EC2InstanceController bestInstance = manager.getInstanceWithSmallerLoad(request);
 		//Also check if instance is bound to be removed
 		try{
 			//Check tolerance failure
 			//If bestInstanceIp == null -> wait some seconds and retry
-			EC2InstanceController bestInstance = manager.getInstanceWithSmallerLoad(request);
 			while (bestInstance == null){
 				System.out.println("Could not obtain instance to send request to, waiting some seconds...");
-				Thread.sleep(5000);
+				Thread.sleep(10000);
 				bestInstance = manager.getInstanceWithSmallerLoad(request);
 			}
 			String bestInstanceIp = bestInstance.getInstanceIP();
@@ -252,10 +252,16 @@ public class LoadBalancer implements Runnable{
 	        }
 
 		}catch(IOException e){
+			System.out.println("Received IOException exception when sending request");
 			//Something went wrong, need to re-ask for new instance to send request
-			SelectBestInstanceAndSendRequest(request, t);
 			e.printStackTrace();
+			if (bestInstance != null){
+				manager.removeRequest(bestInstance.getInstanceID(), request);
+			}
+			SelectBestInstanceAndSendRequest(request, t);
+			
 		}catch(Exception e){
+			System.out.println("Received random exception when sending request");
 			e.printStackTrace();
 		}
 	}

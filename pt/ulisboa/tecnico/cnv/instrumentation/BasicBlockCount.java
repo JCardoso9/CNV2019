@@ -61,7 +61,7 @@ public class BasicBlockCount {
       e.printStackTrace();
     }
     basicBlockCounter.put(threadID, new BigInteger("0"));*/
-    DynamoDBStorage.storeMetricsGathered(threadID, basicBlockCount);
+    DynamoDBStorage.getInstance().storeMetricsGathered(threadID, basicBlockCount);
 
   }
 

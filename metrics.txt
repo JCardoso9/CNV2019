@@ -1,6 +1,0 @@
-Thread ID: 12 |  Params: w=512&h=512&x0=43&x1=512&y0=0&y1=512&xS=101&yS=0&s=ASTAR&i=datasets/RANDOM_HILL_512x512_2019-02-27_09-46-42.dat basic blocks 1467205
-Thread ID: 12 |  Params: w=512&h=512&x0=43&x1=512&y0=0&y1=512&xS=101&yS=0&s=BFS&i=datasets/RANDOM_HILL_512x512_2019-02-27_09-46-42.dat basic blocks 4290961
-Thread ID: 12 |  Params: w=512&h=512&x0=0&x1=512&y0=0&y1=512&xS=0&yS=0&s=DFS&i=datasets/RANDOM_HILL_512x512_2019-03-01_10-28-39.dat basic blocks 4582508
-Thread ID: 14 |  Params: w=512&h=512&x0=43&x1=512&y0=0&y1=512&xS=101&yS=0&s=DFS&i=datasets/RANDOM_HILL_512x512_2019-02-27_09-46-42.dat basic blocks 3821869
-Thread ID: 12 |  Params: w=512&h=512&x0=11&x1=512&y0=0&y1=512&xS=33&yS=0&s=DFS&i=datasets/RANDOM_HILL_512x512_2019-02-27_09-46-42.dat basic blocks 4338257
-Thread ID: 14 |  Params: w=1024&h=1024&x0=33&x1=1024&y0=0&y1=1024&xS=56&yS=0&s=DFS&i=datasets/RANDOM_HILL_1024x1024_2019-03-08_16-57-28.dat basic blocks 18031496

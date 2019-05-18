@@ -183,7 +183,6 @@ public class EC2InstanceController extends AbstractInstanceObservable {
 
     public boolean checkHealth(){
         try{
-            System.out.println("Checking instance " + ec2InstanceIP);
             URL url = new URL("http://" + ec2InstanceAdress + "/test");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");

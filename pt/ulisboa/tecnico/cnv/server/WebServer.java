@@ -24,6 +24,7 @@ import pt.ulisboa.tecnico.cnv.solver.SolverArgumentParser;
 import pt.ulisboa.tecnico.cnv.solver.SolverFactory;
 import pt.ulisboa.tecnico.cnv.storage.*;
 import pt.ulisboa.tecnico.cnv.parser.*;
+import java.util.*;
 
 import javax.imageio.ImageIO;
 
@@ -70,7 +71,8 @@ public class WebServer {
 
 			System.out.println("> Query:\t" + query);
 			Request request = new QueryParser().parseAndGetRequest(query);
-			DynamoDBStorage.setNewRequest(threadID, request);
+			request.setRequestId(UUID.randomUUID().toString());
+			DynamoDBStorage.getInstance().setNewRequest(threadID, request);
 
 			// Break it down into String[].
 			final String[] params = query.split("&");
@@ -146,7 +148,6 @@ public class WebServer {
 			} catch (ClassNotFoundException e) {
 				e.printStackTrace();
 			}
-
 			// Send response to browser.
 			final Headers hdrs = t.getResponseHeaders();
 

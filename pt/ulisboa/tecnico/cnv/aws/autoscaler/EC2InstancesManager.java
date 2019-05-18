@@ -39,8 +39,8 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
     private EC2InstancesManager() {
 
-    	/*Timer timer = new Timer();
-        timer.schedule(new RunHealthCheckTimer(), SECONDS_BETWEEN_HEALTH_CHECKS * 1000, SECONDS_BETWEEN_HEALTH_CHECKS * 1000);*/
+    	Timer timer = new Timer();
+        timer.schedule(new RunHealthCheckTimer(), SECONDS_BETWEEN_HEALTH_CHECKS * 1000, SECONDS_BETWEEN_HEALTH_CHECKS * 1000);
 
     }
 
@@ -144,9 +144,6 @@ public class EC2InstancesManager extends AbstractManagerObservable {
             return null;
         }
         else{
-            for (EC2InstanceController instance : instances){
-                System.out.println("Instance ID: " + instance.getInstanceID() + "Instance load : " + instance.getLoad());
-            }
             int bestIndex = 0;
             EC2InstanceController bestInstance = instances.get(bestIndex);
             while (bestInstance.isMarkedForShutdown() && bestIndex < instances.size()){
@@ -202,7 +199,6 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
     public synchronized void  checkInstances(){
     	for (EC2InstanceController instance : ec2instances.values()){
-    		System.out.println("Pinging " + instance.getInstanceID());
         	boolean healthy = instance.checkHealth();
         	System.out.println("Healthy:  " + healthy);
         	updateHealthInstance(instance.getInstanceID(), healthy);
@@ -232,7 +228,6 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     class RunHealthCheckTimer extends TimerTask {
 
         public void run() {
-            System.out.println("Running health check...");
             if (!ec2instances.isEmpty()) checkInstances();
         }
     }

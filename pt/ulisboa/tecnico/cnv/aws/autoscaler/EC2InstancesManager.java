@@ -160,13 +160,20 @@ public class EC2InstancesManager extends AbstractManagerObservable {
             while (bestInstance.isMarkedForShutdown() && bestIndex < instances.size()){
                 bestIndex++;
                 if (bestIndex == instances.size()){
-                    return null;
+                    bestInstance = null;
                 }
-                bestInstance = instances.get(bestIndex);
+                else{
+                    bestInstance = instances.get(bestIndex);
+                }
             }
-            if (bestInstance.getLoad() > 0 && idleInstances.size() != 0){
-                bestInstance = ec2instances.get(idleInstances.get(0));
-                EC2AutoScaler.getInstance().quitShutdownProcedure(bestInstance.getInstanceID());
+            if (idleInstances.size() != 0){
+                if (bestInstance == null || bestInstance.getLoad() > 0){
+                    bestInstance = ec2instances.get(idleInstances.get(0));
+                    EC2AutoScaler.getInstance().quitShutdownProcedure(bestInstance.getInstanceID());
+                }
+            }
+            else if (bestInstance == null){
+                return null;
             }
             if (bestInstance.getLoad() + request.getEstimatedCost() > EC2AutoScaler.MAXIMUM_REQUEST_COMPLEXITY){
                 //Should be through auto scaler

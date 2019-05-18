@@ -89,7 +89,7 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
         manager = EC2InstancesManager.getInstance();
         
         Timer autoScalerAwaken = new Timer();
-        autoScalerAwaken.schedule(new RunAutoScalerLogic(), SECONDS_BETWEEN_HEALTH_CHECKS * 1000, SECONDS_BETWEEN_HEALTH_CHECKS * 1000);
+        autoScalerAwaken.schedule(new RunAutoScalerLogic(), NUMBER_OF_SECONDS_BETWEEN_AS_LOGIC * 1000, NUMBER_OF_SECONDS_BETWEEN_AS_LOGIC * 1000);
     }
 
     public synchronized static EC2AutoScaler getInstance() {

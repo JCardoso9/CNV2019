@@ -98,7 +98,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
     public int getClusterAvailableLoad(){
     	int totalLoadPossible = 10 * ec2instances.size();
-    	int availableClusterLoad = totalLoadPossible - this.calculateTotalClusterLoad();
+    	int availableClusterLoad = totalLoadPossible - calculateTotalClusterLoad();
     	return availableClusterLoad;
     }
 
@@ -133,14 +133,6 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     public void reActivate(String instanceID){
     	ec2instances.get(instanceID).reActivate();
     }
-
-   /* public void increaseTotalLoad(int newRequestLoad){
-    	totalClusterLoad += newRequestLoad;
-    }
-
-    public void decreaseInstanceLoad(int finishedRequestLoad){
-    	totalClusterLoad += newRequestLoad;
-    }*/
 
     public synchronized EC2InstanceController getInstanceWithSmallerLoad(Request request){
         System.out.println("Getting best request");
@@ -186,11 +178,13 @@ public class EC2InstancesManager extends AbstractManagerObservable {
                         e.printStackTrace();
                     }
                 }
+                System.out.println("ADDING  NEW REQUEST 1 : " + bestInstance.getInstanceID());
                 newInstance.addNewRequest(request);
 
                 // ver se sistema precisa de criar uma nova maquina?
                 return newInstance;
             }
+            System.out.println("ADDING  NEW REQUEST 2 : " + bestInstance.getInstanceID());
             bestInstance.addNewRequest(request);
 
             return bestInstance;

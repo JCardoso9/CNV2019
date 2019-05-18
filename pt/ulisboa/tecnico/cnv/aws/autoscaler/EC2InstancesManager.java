@@ -159,6 +159,9 @@ public class EC2InstancesManager extends AbstractManagerObservable {
             EC2InstanceController bestInstance = instances.get(bestIndex);
             while (bestInstance.isMarkedForShutdown() && bestIndex < instances.size()){
                 bestIndex++;
+                if (bestIndex == instances.size()){
+                    return null;
+                }
                 bestInstance = instances.get(bestIndex);
             }
             if (bestInstance.getLoad() > 0 && idleInstances.size() != 0){
@@ -191,7 +194,6 @@ public class EC2InstancesManager extends AbstractManagerObservable {
             EC2InstanceController instance = ec2instances.get(instanceID);
             instance.removeRequest(request);
             //Notify auto scaler;
-            EC2AutoScaler.getInstance().update(this, this);
         }
     }
 

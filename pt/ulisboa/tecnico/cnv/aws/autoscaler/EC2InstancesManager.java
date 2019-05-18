@@ -99,7 +99,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
 
     public int getClusterAvailableLoad(){
-    	int totalLoadPossible = 10 * ec2instances.size();
+    	int totalLoadPossible = MAXIMUM_REQUEST_COMPLEXITY * ec2instances.size();
     	int availableClusterLoad = totalLoadPossible - calculateTotalClusterLoad();
     	return availableClusterLoad;
     }
@@ -169,7 +169,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
             if (idleInstances.size() != 0){
                 if (bestInstance == null || bestInstance.getLoad() > 0){
                     bestInstance = ec2instances.get(idleInstances.get(0));
-                    EC2AutoScaler.getInstance().quitShutdownProcedure(bestInstance.getInstanceID());
+                    if (bestInstance.isMarkedForShutdown()) EC2AutoScaler.getInstance().quitShutdownProcedure(bestInstance.getInstanceID());
                 }
             }
             else if (bestInstance == null){
@@ -210,7 +210,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     public synchronized void  checkInstances(){
     	for (EC2InstanceController instance : ec2instances.values()){
         	boolean healthy = instance.checkHealth();
-        	System.out.println("Healthy:  " + healthy);
+        	System.out.println(instance.getInstanceIP() + "Healthy:  " + healthy);
         	updateHealthInstance(instance.getInstanceID(), healthy);
         }
     }

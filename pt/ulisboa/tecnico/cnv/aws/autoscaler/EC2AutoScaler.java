@@ -152,8 +152,8 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
         for (String instanceID : updatedIdleInstances){
             /*System.out.println("Instances Left: " + nrInstancesLeft);*/
             if (!idleInstances.contains(instanceID) && nrInstancesLeft > MINIMUM_NUMBER_OF_INSTANCES && 
-                manager.getClusterAvailableLoad() - manager.getLoadOfInstance(instanceID) > MINIMUM_LOAD_AVAILABLE){
-                
+                manager.getClusterAvailableLoad() - manager.getAvailableLoadInstance(instanceID) > MINIMUM_LOAD_AVAILABLE){
+
                 System.out.println("Marking " + instanceID + " for shutdown...");
                 idleInstances.add(instanceID);
                 manager.markForShutdown(instanceID);

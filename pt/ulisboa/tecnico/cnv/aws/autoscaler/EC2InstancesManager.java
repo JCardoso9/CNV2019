@@ -18,6 +18,8 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
 	int MAXIMUM_FAILED_HEALTH_CHECKS = 3;
 	int SECONDS_BETWEEN_HEALTH_CHECKS = 40;
+	int FIRST_HEALTH_CHECK = 20;
+	int MAXIMUM_REQUEST_COMPLEXITY = 10;
 
 
     String ec2InstanceID;
@@ -40,7 +42,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     private EC2InstancesManager() {
 
     	/*Timer timer = new Timer();
-        timer.schedule(new RunHealthCheckTimer(), SECONDS_BETWEEN_HEALTH_CHECKS * 1000, SECONDS_BETWEEN_HEALTH_CHECKS * 1000);*/
+        timer.schedule(new RunHealthCheckTimer(), SECONDS_BETWEEN_HEALTH_CHECKS * 1000, FIRST_HEALTH_CHECK * 1000);*/
 
     }
 
@@ -127,6 +129,10 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
     public int getLoadOfInstance(String instanceID){
     	return ec2instances.get(instanceID).getLoad();
+    }
+
+    public int getAvailableLoadInstance(String instanceID){
+    	return MAXIMUM_REQUEST_COMPLEXITY - ec2instances.get(instanceID).getLoad();
     }
 
 

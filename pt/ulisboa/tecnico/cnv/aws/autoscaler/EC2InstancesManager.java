@@ -39,8 +39,8 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
     private EC2InstancesManager() {
 
-    	Timer timer = new Timer();
-        timer.schedule(new RunHealthCheckTimer(), SECONDS_BETWEEN_HEALTH_CHECKS * 1000, SECONDS_BETWEEN_HEALTH_CHECKS * 1000);
+    	/*Timer timer = new Timer();
+        timer.schedule(new RunHealthCheckTimer(), SECONDS_BETWEEN_HEALTH_CHECKS * 1000, SECONDS_BETWEEN_HEALTH_CHECKS * 1000);*/
 
     }
 
@@ -161,6 +161,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
                 bestIndex++;
                 if (bestIndex == instances.size()){
                     bestInstance = null;
+                    break;
                 }
                 else{
                     bestInstance = instances.get(bestIndex);

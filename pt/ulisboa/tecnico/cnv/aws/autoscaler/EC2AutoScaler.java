@@ -122,6 +122,7 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
     }
 
     public void executeAutoScalerLogic(){
+        System.out.println("Nr Of instances: " + manager.getNumberInstances());
         if(manager.getNumberInstances() < MINIMUM_NUMBER_OF_INSTANCES){
             if (!manager.isInstanceBeingCreated()) scaleUp();
         }
@@ -129,6 +130,7 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
         else{
 
             //check if scale up is needed
+            System.out.println("Available Load: " + manager.getClusterAvailableLoad());
             if (manager.getNumberInstances() < MAXIMUM_NUMBER_OF_INSTANCES){
                 if (manager.getClusterAvailableLoad() < MINIMUM_LOAD_AVAILABLE){
                     if (!manager.isInstanceBeingCreated()) scaleUp();
@@ -141,17 +143,20 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
             List<String> updatedIdleInstances = manager.getIdleInstances();
             System.out.println("Idle: " + updatedIdleInstances);
             markForShutdown(updatedIdleInstances); 
-            markForShutdown(updatedIdleInstances);
+
         }
     } 
 
     public void markForShutdown(List<String> updatedIdleInstances){
+        int nrInstancesLeft = manager.getNumberInstances();
         for (String instanceID : updatedIdleInstances){
-            if (!idleInstances.contains(instanceID)){
+            /*System.out.println("Instances Left: " + nrInstancesLeft);*/
+            if (!idleInstances.contains(instanceID) && nrInstancesLeft > MINIMUM_NUMBER_OF_INSTANCES){
                 System.out.println("Marking " + instanceID + " for shutdown...");
                 idleInstances.add(instanceID);
                 manager.markForShutdown(instanceID);
                 startShutdownProcedure(instanceID);
+                nrInstancesLeft -= 1;
             }
         }
     }

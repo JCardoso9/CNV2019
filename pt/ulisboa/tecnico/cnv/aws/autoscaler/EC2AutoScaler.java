@@ -118,7 +118,7 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
 
     public void executeAutoScalerLogic(){
         if(manager.getNumberInstances() < MINIMUM_NUMBER_OF_INSTANCES){
-            scaleUp();
+            if (!manager.isInstanceBeingCreated()) scaleUp();
         }
 
         else{
@@ -126,7 +126,7 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
             //check if scale up is needed
             if (manager.getNumberInstances() < MAXIMUM_NUMBER_OF_INSTANCES){
                 if (manager.getClusterAvailableLoad() < MINIMUM_LOAD_AVAILABLE){
-                    scaleUp();
+                    if (!manager.isInstanceBeingCreated()) scaleUp();
                 }
 
             }
@@ -136,6 +136,7 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
             List<String> updatedIdleInstances = manager.getIdleInstances();
             System.out.println("Idle: " + updatedIdleInstances);
             markForShutdown(updatedIdleInstances); 
+            markForShutdown(updatedIdleInstances);
         }
     } 
 

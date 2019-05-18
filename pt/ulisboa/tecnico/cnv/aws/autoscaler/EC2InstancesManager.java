@@ -21,6 +21,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
 
     String ec2InstanceID;
+    boolean isInstanceBeingCreated;
 
 
     private HashMap<String, EC2InstanceController> ec2instances = new HashMap<String, EC2InstanceController>();
@@ -37,8 +38,10 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     };
 
     private EC2InstancesManager() {
-    	//Timer timer = new Timer();
-        //timer.schedule(new RunHealthCheckTimer(), SECONDS_BETWEEN_HEALTH_CHECKS * 1000, 50000);
+
+    	Timer timer = new Timer();
+        timer.schedule(new RunHealthCheckTimer(), SECONDS_BETWEEN_HEALTH_CHECKS * 1000, SECONDS_BETWEEN_HEALTH_CHECKS * 1000);
+
     }
 
 
@@ -53,6 +56,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
 
     public void addInstance(EC2InstanceController instance){
+    	isInstanceBeingCreated = false;
         ec2instances.put(instance.getInstanceID(), instance);
 /*        ec2instancesLoads.put(instance.getInstanceID(), 0);
 */    }
@@ -100,6 +104,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
 
     public EC2InstanceController createInstance() {
+    	isInstanceBeingCreated = true;
         return EC2InstanceController.requestNewEC2Instance();
 
     }
@@ -114,6 +119,10 @@ public class EC2InstancesManager extends AbstractManagerObservable {
         else{
         	System.out.println("There was no instance with this ID");
         }
+    }
+
+    public boolean isInstanceBeingCreated(){
+    	return isInstanceBeingCreated;
     }
 
 
@@ -167,6 +176,8 @@ public class EC2InstancesManager extends AbstractManagerObservable {
                     }
                 }
                 newInstance.addNewRequest(request);
+
+                // ver se sistema precisa de criar uma nova maquina?
                 return newInstance;
             }
             bestInstance.addNewRequest(request);

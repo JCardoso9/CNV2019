@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.Timer;
+import java.util.TimerTask;
 import pt.ulisboa.tecnico.cnv.aws.AmazonClient;
 import pt.ulisboa.tecnico.cnv.aws.balancer.*;
 
@@ -70,6 +71,8 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
 
     private int NUMBER_OF_MILISECONDS_BEFORE_SHUTDOWN = 30 * 1000;
 
+    private int NUMBER_OF_SECONDS_BETWEEN_AS_LOGIC = 60 ;
+
     private EC2InstancesManager manager;
 
     static EC2AutoScaler  instance;
@@ -85,6 +88,8 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
 
         manager = EC2InstancesManager.getInstance();
         
+        Timer autoScalerAwaken = new Timer();
+        autoScalerAwaken.schedule(new RunAutoScalerLogic(), SECONDS_BETWEEN_HEALTH_CHECKS * 1000, SECONDS_BETWEEN_HEALTH_CHECKS * 1000);
     }
 
     public synchronized static EC2AutoScaler getInstance() {
@@ -187,5 +192,12 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
         idleInstances.remove(instanceID);
         manager.deleteInstance(instanceID);
 
+    }
+
+    class RunAutoScalerLogic extends TimerTask {
+
+        public void run() {
+            executeAutoScalerLogic();            
+        }
     }
 }

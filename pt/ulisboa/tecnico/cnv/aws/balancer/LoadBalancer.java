@@ -275,7 +275,7 @@ public class LoadBalancer implements Runnable{
 		}catch(IOException e){
 			System.out.println("Received IOException exception when sending request");
 			//Something went wrong, need to re-ask for new instance to send request
-			e.printStackTrace();
+			/*e.printStackTrace();*/
 			if (bestInstance != null){
 				manager.removeRequest(bestInstance.getInstanceID(), request);
 			}

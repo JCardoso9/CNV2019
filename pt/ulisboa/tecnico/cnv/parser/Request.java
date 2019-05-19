@@ -53,6 +53,7 @@ public class Request{
 	public String getDataset(){
 		return this.dataset;
 	}
+	
 	public String getRawQuery(){
 		if (this.requestId != null && !this.requestId.isEmpty()){
 			return this.rawQuery + "&id=" + this.requestId;

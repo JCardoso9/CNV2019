@@ -84,14 +84,15 @@ public class WebServer {
 			final ArrayList<String> newArgs = new ArrayList<>();
 			for (final String p : params) {
 				final String[] splitParam = p.split("=");
-				newArgs.add("-" + splitParam[0]);
-				newArgs.add(splitParam[1]);
+				if (splitParam[0] != "id"){
+					newArgs.add("-" + splitParam[0]);
+					newArgs.add(splitParam[1]);
+				}
 
-				/*
-				 * System.out.println("splitParam[0]: " + splitParam[0]);
-				 * System.out.println("splitParam[1]: " + splitParam[1]);
-				 */
-			}
+				System.out.println("splitParam[0]: " + splitParam[0]);
+				System.out.println("splitParam[1]: " + splitParam[1]);
+				
+				}
 
 			newArgs.add("-d");
 

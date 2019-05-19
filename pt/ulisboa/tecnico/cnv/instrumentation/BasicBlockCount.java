@@ -40,27 +40,6 @@ public class BasicBlockCount {
   public static synchronized void printBBCount(String foo) {
     long threadID = Thread.currentThread().getId();
     long basicBlockCount = (long) basicBlockCounter.get(threadID);
-
-    /*try {
-      BufferedWriter writer;
-      
-      String str = "Thread ID: " + threadID + " |  Params: " + ThreadLocalStorage.getParams().toString()
-          + " basic blocks " + basicBlockCount;
-
-      if (new File("metrics.txt").isFile()) {
-        writer = new BufferedWriter(new FileWriter("metrics.txt", true));
-      } else {
-        writer = new BufferedWriter(new FileWriter("metrics.txt"));
-      }
-
-      System.out.println(str);
-      writer.write(str);
-      writer.newLine();
-      writer.close();
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-    basicBlockCounter.put(threadID, new BigInteger("0"));*/
     DynamoDBStorage.getInstance().storeMetricsGathered(threadID, basicBlockCount);
 
   }

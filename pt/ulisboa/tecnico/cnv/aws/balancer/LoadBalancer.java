@@ -41,6 +41,7 @@ public class LoadBalancer implements Runnable{
 	private static double distanceLargestMap = 0;
 	private static int n = 10;
 	private static EC2InstancesManager manager;
+	private static HashMap<String, ArrayList<RequestMapping>> lastMappings = new HashMap<>(); 
 
 	public static void main(String[] args) throws Exception {
 		ExecutorService executor = Executors.newFixedThreadPool(2);
@@ -58,7 +59,6 @@ public class LoadBalancer implements Runnable{
 			server.start();
 			System.out.println(server.getAddress().toString());
 			mapper = DynamoDBStorage.getInstance().mapper;
-			
 			manager = EC2InstancesManager.getInstance();
 		}catch(Exception e){
 			e.printStackTrace();
@@ -149,49 +149,66 @@ public class LoadBalancer implements Runnable{
 		return Math.sqrt((Math.pow((farthestPointX-xs),2) + Math.pow((farthestPointY-ys),2)));
 	}
 
+	static boolean CheckIfInCache(Request request){
+		if (lastMappings.get(request.getDataset()) != null){
+			for (RequestMapping mapping : lastMappings.get(request.getDataset())){
+				System.out.println("In cache, mapping : " + mapping.toString());
+				if (mapping.getX0() == request.getX0() && mapping.getX1() == request.getX1() && mapping.getXs() == request.Xs() && mapping.getYs() == request.Ys() &&
+					mapping.getY0() == request.getY0() && mapping.getY1() == request.getY1() && mapping.getStrategy() == request.getStrategy()){
+					request.setEstimatedCost((long)Math.round((mapping.getMetrics()/maxMetric)*n));
+					System.out.println("Found same request in cache, cost : " + request.getEstimatedCost());
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	static Request EstimateRequestComplexity(Request request){
 		//Check if in cache later.
 		System.out.println("Estimating request complexity....");
-		List<RequestMapping> mappingList = QueryDB(request);
-		double metricsAvg = -1;
-		int metricsNumber = 0;
-		if (mappingList.size() > 0){
-			System.out.println("Found stuff in database");
-			for (RequestMapping mapping : mappingList){
-				if (mapping.getX0() == request.getX0() && mapping.getX1() == request.getX1() && mapping.getY0() == request.getY0()
-					&& mapping.getY1() == request.getY1() && mapping.getXs() == request.Xs()){
+		if(!CheckIfInCache(request)){
+			List<RequestMapping> mappingList = QueryDB(request);
+			double metricsAvg = -1;
+			int metricsNumber = 0;
+			if (mappingList.size() > 0){
+				System.out.println("Found stuff in database");
+				for (RequestMapping mapping : mappingList){
+					if (mapping.getX0() == request.getX0() && mapping.getX1() == request.getX1() && mapping.getY0() == request.getY0()
+						&& mapping.getY1() == request.getY1() && mapping.getXs() == request.Xs()){
+						if (maxMetric < mapping.getMetrics()){
+							maxMetric = mapping.getMetrics();
+						}
+						long cost = Math.round((mapping.getMetrics()/maxMetric)*n);
+						request.setEstimatedCost(cost);
+						System.out.println("Found exact same request : "  + request.getEstimatedCost());
+						return request;
+					}
 					if (maxMetric < mapping.getMetrics()){
 						maxMetric = mapping.getMetrics();
 					}
-					long cost = Math.round((mapping.getMetrics()/maxMetric)*n);
-					request.setEstimatedCost(cost);
-					System.out.println("Found exact same request : "  + request.getEstimatedCost());
-					return request;
+					metricsAvg += mapping.getMetrics();
+					metricsNumber++;
+					//Might need some additional checks here.
 				}
-				if (maxMetric < mapping.getMetrics()){
-					maxMetric = mapping.getMetrics();
-				}
-				metricsAvg += mapping.getMetrics();
-				metricsNumber++;
-				//Might need some additional checks here.
+				metricsAvg = metricsAvg/metricsNumber;
+				long cost = Math.round((metricsAvg/maxMetric)*n);
+				request.setEstimatedCost(cost);
+				System.out.println("Average of similar requests cost : " + request.getEstimatedCost());
 			}
-			metricsAvg = metricsAvg/metricsNumber;
-			long cost = Math.round((metricsAvg/maxMetric)*n);
-			request.setEstimatedCost(cost);
-			System.out.println("Average of similar requests cost : " + request.getEstimatedCost());
-		}
-		else{
-			System.out.println("Nothing in db ");
-			//Estimate cost.
-			double mapArea = (request.getX1()-request.getX0())*(request.getY1()-request.getY0());
-			double areaRatio = mapArea/largestMapArea;
-			double distanceWorstCase = CalculateWorstCaseDistance(request.getX0(),request.getX1(),request.getY0(),request.getY1(),request.Xs(),request.Ys());
-			double distanceRatio = distanceWorstCase/distanceLargestMap;
-			//This is incorrect and can give values above n, need to rethink formula;
-			long cost = Math.round(((areaRatio + distanceRatio)/2)*n);
-			request.setEstimatedCost(cost);
-			System.out.println("Cost : " + Long.toString(cost));
-			
+			else{
+				System.out.println("Nothing in db ");
+				//Estimate cost.
+				double mapArea = (request.getX1()-request.getX0())*(request.getY1()-request.getY0());
+				double areaRatio = mapArea/largestMapArea;
+				double distanceWorstCase = CalculateWorstCaseDistance(request.getX0(),request.getX1(),request.getY0(),request.getY1(),request.Xs(),request.Ys());
+				double distanceRatio = distanceWorstCase/distanceLargestMap;
+				//This is incorrect and can give values above n, need to rethink formula;
+				long cost = Math.round(((areaRatio + distanceRatio)/2)*n);
+				request.setEstimatedCost(cost);
+				System.out.println("Cost : " + Long.toString(cost));
+				
+			}
 		}
 		return request;
 	}
@@ -207,11 +224,14 @@ public class LoadBalancer implements Runnable{
 				Thread.sleep(10000);
 				bestInstance = manager.getInstanceWithSmallerLoad(request);
 			}
+			request.setRequestId(UUID.randomUUID().toString());
 			String bestInstanceIp = bestInstance.getInstanceIP();
 			URL url = new URL("http://" + bestInstanceIp + ":8000/climb?" + request.getRawQuery());
 			System.out.println("http://" + bestInstanceIp + ":8000/climb?" + request.getRawQuery());
 			HttpURLConnection con = (HttpURLConnection) url.openConnection();
 			con.setRequestMethod("GET");
+			System.out.println("Connection timeout : " + con.getConnectTimeout());
+			System.out.println("Read timeout : " + con.getReadTimeout());
 			System.out.println("Sent request");
 			DataInputStream is = new DataInputStream((con.getInputStream()));
 	  		byte[] responseBytes = new byte[con.getContentLength()];
@@ -228,6 +248,7 @@ public class LoadBalancer implements Runnable{
 		  			bytes += is.read(responseBytes, bytes, responseBytes.length - bytes);
 		  			System.out.println("Getting bytes...");
 		  		}
+		  		UpdateMaxMetricAndCache(request.getDataset(), request.getRequestId());
 		  		System.out.println("Received response");
 
 		  		if (con != null){
@@ -305,6 +326,29 @@ public class LoadBalancer implements Runnable{
 	            throw new Exception("Cannot load properties from file or they have no value." +
 	                    " Make sure all properties have been declared.");
 	        }
+		}
+	}
+
+	private static void UpdateMaxMetricAndCache(String requestId, String requestDataset){
+		RequestMapping mapping = mapper.load(RequestMapping.class, requestDataset, requestId);
+		if (mapping != null){
+			System.out.println("YEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
+			if (lastMappings.get(requestDataset) == null){
+				ArrayList<RequestMapping> firstMapping = new ArrayList<RequestMapping>();
+				firstMapping.add(mapping);
+				lastMappings.put(requestDataset, firstMapping);
+			}
+			else{
+				ArrayList<RequestMapping> mappings = lastMappings.get(requestDataset);
+				if (mappings.size() == 5){
+					mappings.remove(0);
+				}
+				mappings.add(mapping);
+				lastMappings.put(requestDataset, mappings);
+			}
+			if(mapping.getMetrics() > maxMetric){
+				maxMetric = mapping.getMetrics();
+			}
 		}
 	}
 }

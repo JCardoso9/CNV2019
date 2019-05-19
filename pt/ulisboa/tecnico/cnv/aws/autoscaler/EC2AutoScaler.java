@@ -32,8 +32,6 @@ import java.util.TimerTask;
 import pt.ulisboa.tecnico.cnv.aws.AmazonClient;
 import pt.ulisboa.tecnico.cnv.aws.balancer.*;
 
-import java.lang.Runnable;
-
 import pt.ulisboa.tecnico.cnv.aws.observer.AbstractAutoScalerObserver;
 
 
@@ -77,6 +75,8 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
 
     static EC2AutoScaler  instance;
 
+
+    boolean scaledUp = false;
 
     private List<String> idleInstances = new ArrayList<String>();
 
@@ -122,6 +122,7 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
     }
 
     public void executeAutoScalerLogic(){
+        scaledUp = false;
         System.out.println("Nr Of instances: " + manager.getNumberInstances());
         if(manager.getNumberInstances() < MINIMUM_NUMBER_OF_INSTANCES){
             if (!manager.isInstanceBeingCreated()) scaleUp();
@@ -134,15 +135,17 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
             if (manager.getNumberInstances() < MAXIMUM_NUMBER_OF_INSTANCES){
                 if (manager.getClusterAvailableLoad() < MINIMUM_LOAD_AVAILABLE){
                     if (!manager.isInstanceBeingCreated()) scaleUp();
+                    scaledUp = true;
                 }
 
             }
 
-            
-            //check if scale down is needed
-            List<String> updatedIdleInstances = manager.getIdleInstances();
-            System.out.println("Idle: " + updatedIdleInstances);
-            markForShutdown(updatedIdleInstances); 
+            if (!scaledUp){
+                //check if scale down is needed
+                List<String> updatedIdleInstances = manager.getIdleInstances();
+                System.out.println("Idle: " + updatedIdleInstances);
+                markForShutdown(updatedIdleInstances); 
+            }
 
         }
     } 
@@ -152,7 +155,7 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
         for (String instanceID : updatedIdleInstances){
             /*System.out.println("Instances Left: " + nrInstancesLeft);*/
             System.out.println("Available Load is " + manager.getClusterAvailableLoad());
-            System.out.println("If instance deleted, system would have " + (manager.getClusterAvailableLoad() - manager.getAvailableLoadInstance(instanceID)));
+            System.out.println("If instance " + instanceID + " deleted, system would have " + (manager.getClusterAvailableLoad() - manager.getAvailableLoadInstance(instanceID)));
             if (!idleInstances.contains(instanceID) && nrInstancesLeft > MINIMUM_NUMBER_OF_INSTANCES && 
                 manager.getClusterAvailableLoad() - manager.getAvailableLoadInstance(instanceID) >= MINIMUM_LOAD_AVAILABLE){
 

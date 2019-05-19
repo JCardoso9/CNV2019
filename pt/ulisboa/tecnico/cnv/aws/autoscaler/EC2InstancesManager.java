@@ -8,6 +8,10 @@ import pt.ulisboa.tecnico.cnv.parser.Request;
 import pt.ulisboa.tecnico.cnv.aws.observer.*;
 
 import java.util.TimerTask;
+import java.lang.Runnable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
+
 
 
 
@@ -41,9 +45,9 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
     private EC2InstancesManager() {
 
-    	Timer timer = new Timer();
-        timer.schedule(new RunHealthCheckTimer(), SECONDS_BETWEEN_HEALTH_CHECKS * 1000, SECONDS_BETWEEN_HEALTH_CHECKS * 1000);
-
+    	ExecutorService executor = Executors.newCachedThreadPool();
+		//server.setExecutor(Executors.newCachedThreadPool());
+		executor.submit(new HealthCheckCreator());
     }
 
 
@@ -210,7 +214,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     public synchronized void  checkInstances(){
     	for (EC2InstanceController instance : ec2instances.values()){
         	boolean healthy = instance.checkHealth();
-        	System.out.println(instance.getInstanceIP() + "Healthy:  " + healthy);
+        	System.out.println(instance.getInstanceIP() + " Healthy:  " + healthy);
         	updateHealthInstance(instance.getInstanceID(), healthy);
         }
     }
@@ -239,6 +243,15 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
         public void run() {
             if (!ec2instances.isEmpty()) checkInstances();
+        }
+    }
+
+
+    class HealthCheckCreator implements Runnable {
+
+        public void run() {
+            Timer timer = new Timer();
+       		timer.schedule(new RunHealthCheckTimer(), SECONDS_BETWEEN_HEALTH_CHECKS * 1000, SECONDS_BETWEEN_HEALTH_CHECKS * 1000);
         }
     }
 

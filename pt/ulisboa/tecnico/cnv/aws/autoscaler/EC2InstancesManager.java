@@ -98,6 +98,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
         for (EC2InstanceController instance : ec2instances.values()){
         	totalClusterLoad += instance.getLoad();
         }
+        if (isInstanceBeingCreated) totalClusterLoad += 10;
         return totalClusterLoad;
     }
 
@@ -126,6 +127,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
         	System.out.println("There was no instance with this ID");
         }
     }
+
 
     public boolean isInstanceBeingCreated(){
     	return isInstanceBeingCreated;
@@ -181,19 +183,15 @@ public class EC2InstancesManager extends AbstractManagerObservable {
             }
             if (bestInstance.getLoad() + request.getEstimatedCost() > EC2AutoScaler.MAXIMUM_REQUEST_COMPLEXITY){
                 //Should be through auto scaler
-                EC2InstanceController newInstance = createInstance();
-                while (newInstance.isPending()){
-                    try{
-                        Thread.sleep(5000);
-                    }catch(Exception e){
-                        e.printStackTrace();
-                    }
-                }
-                System.out.println("ADDING  NEW REQUEST 1 : " + bestInstance.getInstanceID());
-                newInstance.addNewRequest(request);
 
-                // ver se sistema precisa de criar uma nova maquina?
-                return newInstance;
+                if (!isInstanceBeingCreated) {
+                	System.out.println("Creating in manager new instance");
+                	EC2InstanceController newInstance = createInstance();
+	                System.out.println("ADDING  NEW REQUEST 1 : " + bestInstance.getInstanceID());
+	                newInstance.addNewRequest(request);
+	                return newInstance;
+	            } 
+	            else return null;
             }
             System.out.println("ADDING  NEW REQUEST 2 : " + bestInstance.getInstanceID());
             bestInstance.addNewRequest(request);

@@ -43,6 +43,7 @@ public class LoadBalancer implements Runnable{
 	private static EC2InstancesManager manager;
 
 	public static void main(String[] args) throws Exception {
+
 		ExecutorService executor = Executors.newFixedThreadPool(2);
 		//server.setExecutor(Executors.newCachedThreadPool());
 		executor.submit(EC2AutoScaler.getInstance());
@@ -86,7 +87,6 @@ public class LoadBalancer implements Runnable{
 	}
 
 	private static int GetDatasetSize(String dataset){
-		//Assuming map is a square, modify to allow rectangles aswell.
 		String[] splitDataset = dataset.split("_");
 		if (splitDataset.length >= 3){
 			int size = Integer.parseInt(splitDataset[2].split("x")[0]);

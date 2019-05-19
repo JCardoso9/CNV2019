@@ -248,7 +248,7 @@ public class LoadBalancer implements Runnable{
 		  			bytes += is.read(responseBytes, bytes, responseBytes.length - bytes);
 		  			System.out.println("Getting bytes...");
 		  		}
-		  		UpdateMaxMetricAndCache(request.getDataset(), request.getRequestId());
+		  		UpdateMaxMetricAndCache(request.getRequestId(), request.getDataset());
 		  		System.out.println("Received response");
 
 		  		if (con != null){
@@ -330,25 +330,34 @@ public class LoadBalancer implements Runnable{
 	}
 
 	private static void UpdateMaxMetricAndCache(String requestId, String requestDataset){
-		RequestMapping mapping = mapper.load(RequestMapping.class, requestDataset, requestId);
-		if (mapping != null){
-			System.out.println("YEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
-			if (lastMappings.get(requestDataset) == null){
-				ArrayList<RequestMapping> firstMapping = new ArrayList<RequestMapping>();
-				firstMapping.add(mapping);
-				lastMappings.put(requestDataset, firstMapping);
-			}
-			else{
-				ArrayList<RequestMapping> mappings = lastMappings.get(requestDataset);
-				if (mappings.size() == 5){
-					mappings.remove(0);
+		try{
+			System.out.println("Request id : " + requestId);
+			System.out.println("Request Dataset : " + requestDataset);
+			RequestMapping mapping = mapper.load(RequestMapping.class, requestDataset, requestId);
+			System.out.println("Pls mapper");
+			if (mapping != null){
+				System.out.println("YEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
+				if (lastMappings.get(requestDataset) == null){
+					ArrayList<RequestMapping> firstMapping = new ArrayList<RequestMapping>();
+					firstMapping.add(mapping);
+					lastMappings.put(requestDataset, firstMapping);
 				}
-				mappings.add(mapping);
-				lastMappings.put(requestDataset, mappings);
+				else{
+					ArrayList<RequestMapping> mappings = lastMappings.get(requestDataset);
+					if (mappings.size() == 5){
+						mappings.remove(0);
+					}
+					mappings.add(mapping);
+					lastMappings.put(requestDataset, mappings);
+				}
+				if(mapping.getMetrics() > maxMetric){
+					maxMetric = mapping.getMetrics();
+				}
 			}
-			if(mapping.getMetrics() > maxMetric){
-				maxMetric = mapping.getMetrics();
-			}
+		}catch(DynamoDBMappingException e){
+			System.out.println("Mapping : " + e.getMessage());
+		}catch(Exception e){
+			e.printStackTrace();
 		}
 	}
 }

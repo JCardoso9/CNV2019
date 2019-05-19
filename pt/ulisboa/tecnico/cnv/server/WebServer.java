@@ -71,7 +71,6 @@ public class WebServer {
 
 			System.out.println("> Query:\t" + query);
 			Request request = new QueryParser().parseAndGetRequest(query);
-			request.setRequestId(UUID.randomUUID().toString());
 			DynamoDBStorage.getInstance().setNewRequest(threadID, request);
 
 			// Break it down into String[].

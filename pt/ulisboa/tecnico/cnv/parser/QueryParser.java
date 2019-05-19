@@ -33,10 +33,12 @@ public class QueryParser{
 	}
 
 	private Request createRequest(){
-		//Maybe add id aswell?
 		Request req = new Request(getRequestId(), parseInt(argumentsMap.get("x0"))
 			,parseInt(argumentsMap.get("x1")),parseInt(argumentsMap.get("y0")),parseInt(argumentsMap.get("y1")),parseInt(argumentsMap.get("xS"))
 			,parseInt(argumentsMap.get("yS")), argumentsMap.get("s"), argumentsMap.get("i"));
+		if (argumentsMap.get("id") != null){
+			req.setRequestId(argumentsMap.get("id"));
+		}
 		req.setRawQuery(rawQuery);
 		return req;
 	}

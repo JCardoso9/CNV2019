@@ -70,6 +70,7 @@ public class LoadBalancer implements Runnable{
 
 
 	private static String GetLimitPoint(double radius, int point, boolean min, int datasetSize){
+		//Calculate the interval of points allowed within the 10% radius
 		if (min){
 			double minimumPoint = point-radius;
 			if (minimumPoint < 0){
@@ -87,6 +88,7 @@ public class LoadBalancer implements Runnable{
 	}
 
 	private static int GetDatasetSize(String dataset){
+		//Obtain dataset size and check wether it's the largest found thus far
 		String[] splitDataset = dataset.split("_");
 		if (splitDataset.length >= 3){
 			int size = Integer.parseInt(splitDataset[2].split("x")[0]);
@@ -102,7 +104,7 @@ public class LoadBalancer implements Runnable{
 	static List<RequestMapping> QueryDB(Request request){
 		try{
 			int datasetSize = GetDatasetSize(request.getDataset());
-			//10% difference, 20% seems alot.
+			//10% radius.
 			double intervalAllowed = datasetSize * 0.1;
 			Map<String, AttributeValue> eav = new HashMap<String, AttributeValue>();
 	        eav.put(":dataset", new AttributeValue().withS(request.getDataset()));
@@ -119,6 +121,7 @@ public class LoadBalancer implements Runnable{
 			eav.put(":maxXs" , new AttributeValue().withN(GetLimitPoint(intervalAllowed, request.Xs(), false, datasetSize)));
 			eav.put(":minYs" , new AttributeValue().withN(GetLimitPoint(intervalAllowed, request.Ys(), true, datasetSize)));
 			eav.put(":maxYs" , new AttributeValue().withN(GetLimitPoint(intervalAllowed, request.Ys(), false, datasetSize)));
+			//Query the database
 	        DynamoDBQueryExpression<RequestMapping> queryExpression = new DynamoDBQueryExpression<RequestMapping>()
 	        		.withKeyConditionExpression("Dataset = :dataset")
 	        		.withFilterExpression("Strategy = :strategy"
@@ -150,6 +153,7 @@ public class LoadBalancer implements Runnable{
 	}
 
 	static boolean CheckIfInCache(Request request){
+		//Check wether the incoming request is present in cache already
 		if (lastMappings.get(request.getDataset()) != null){
 			for (RequestMapping mapping : lastMappings.get(request.getDataset())){
 				System.out.println("In cache, mapping : " + mapping.toString());
@@ -182,6 +186,7 @@ public class LoadBalancer implements Runnable{
 			if (mappingList.size() > 0){
 				System.out.println("Found stuff in database");
 				for (RequestMapping mapping : mappingList){
+					//Check if database contains the exact same request
 					if (mapping.getX0() == request.getX0() && mapping.getX1() == request.getX1() && mapping.getY0() == request.getY0()
 						&& mapping.getY1() == request.getY1() && mapping.getXs() == request.Xs() && mapping.getYs() == request.Ys() && mapping.getStrategy().equals(request.getStrategy())){
 						if (maxMetric < mapping.getMetrics()){
@@ -192,13 +197,11 @@ public class LoadBalancer implements Runnable{
 						System.out.println("Found exact same request : "  + request.getEstimatedCost());
 						return request;
 					}
-					if (maxMetric < mapping.getMetrics()){
-						maxMetric = mapping.getMetrics();
-					}
+					
 					metricsAvg += mapping.getMetrics();
 					metricsNumber++;
-					//Might need some additional checks here.
 				}
+				//Average the requests in database
 				metricsAvg = metricsAvg/metricsNumber;
 				long cost = Math.round((metricsAvg/maxMetric)*n);
 				request.setEstimatedCost(cost);
@@ -223,15 +226,14 @@ public class LoadBalancer implements Runnable{
 
 	static void SelectBestInstanceAndSendRequest(Request request, final HttpExchange t){
 		EC2InstanceController bestInstance = manager.getInstanceWithSmallerLoad(request);
-		//Also check if instance is bound to be removed
 		try{
-			//Check tolerance failure
-			//If bestInstanceIp == null -> wait some seconds and retry
+			// Could not retrieve an instance, wait and ask again.
 			while (bestInstance == null){
 				System.out.println("Could not obtain instance to send request to, waiting some seconds...");
 				Thread.sleep(10000);
 				bestInstance = manager.getInstanceWithSmallerLoad(request);
 			}
+			//Associate with the request a unique ID that is then appended to the raw query
 			request.setRequestId(UUID.randomUUID().toString());
 			String bestInstanceIp = bestInstance.getInstanceIP();
 			URL url = new URL("http://" + bestInstanceIp + ":8000/climb?" + request.getRawQuery());
@@ -242,7 +244,9 @@ public class LoadBalancer implements Runnable{
 			System.out.println("Read timeout : " + con.getReadTimeout());
 			System.out.println("Sent request");
 			DataInputStream is = new DataInputStream((con.getInputStream()));
+			//Obtain response
 	  		byte[] responseBytes = new byte[con.getContentLength()];
+			//Check wether response was successful.
 	  		if (Math.floor(con.getResponseCode()/100) != 2){
 	  			System.out.println("Error code : " + con.getResponseCode());
 	  			manager.removeRequest(bestInstance.getInstanceID(), request);
@@ -251,6 +255,7 @@ public class LoadBalancer implements Runnable{
 	  			//Something went wrong, need to re-ask for new instance to send request
 	  		}
 	  		else{
+				//Read response
 		  		int bytes = 0;
 		  		while (bytes < con.getContentLength()){
 		  			bytes += is.read(responseBytes, bytes, responseBytes.length - bytes);
@@ -263,6 +268,7 @@ public class LoadBalancer implements Runnable{
 		  			System.out.println("Closing connection");
 		  			con.disconnect();
 		  		}
+				//Disassociate request with instance.
 		  		manager.removeRequest(bestInstance.getInstanceID(), request);
 
 		  		final Headers hdrs = t.getResponseHeaders();
@@ -274,7 +280,7 @@ public class LoadBalancer implements Runnable{
 				hdrs.add("Access-Control-Allow-Headers",
 						"Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers");
 
-
+				//Show response to user
 		  		final OutputStream os = t.getResponseBody();
 		        os.write(responseBytes);
 		        os.close();
@@ -301,7 +307,7 @@ public class LoadBalancer implements Runnable{
 
 		public MyHandler(){
 		}
-
+		//Handle incoming requests
 		@Override
 		public void handle(final HttpExchange t) throws IOException {
 			final String query = t.getRequestURI().getQuery();
@@ -325,7 +331,8 @@ public class LoadBalancer implements Runnable{
 	        }
 		}
 	}
-
+	
+	// Check whether max metric needs to be updated and insert the newly executed request in cache
 	private static void UpdateMaxMetricAndCache(String requestId, String requestDataset){
 		try{
 			RequestMapping mapping = mapper.load(RequestMapping.class, requestDataset, requestId);

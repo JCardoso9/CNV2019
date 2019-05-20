@@ -283,7 +283,6 @@ public class LoadBalancer implements Runnable{
 		}catch(IOException e){
 			System.out.println("Received IOException exception when sending request");
 			//Something went wrong, need to re-ask for new instance to send request
-			e.printStackTrace();
 			if (bestInstance != null){
 				manager.removeRequest(bestInstance.getInstanceID(), request);
 			}
@@ -339,8 +338,6 @@ public class LoadBalancer implements Runnable{
 
 	private static void UpdateMaxMetricAndCache(String requestId, String requestDataset){
 		try{
-			System.out.println("Request id : " + requestId);
-			System.out.println("Request Dataset : " + requestDataset);
 			RequestMapping mapping = mapper.load(RequestMapping.class, requestDataset, requestId);
 
 			/*Map<String, AttributeValue> eav = new HashMap<String, AttributeValue>();
@@ -352,9 +349,7 @@ public class LoadBalancer implements Runnable{
 			    .withExpressionAttributeValues(eav);
 			List<RequestMapping> mapping = mapper.query(RequestMapping.class, queryExpression);*/
 
-			System.out.println("Pls mapper");
 			if (mapping != null){
-				System.out.println("YEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
 				if (lastMappings.get(requestDataset) == null){
 					ArrayList<RequestMapping> firstMapping = new ArrayList<RequestMapping>();
 					firstMapping.add(mapping);

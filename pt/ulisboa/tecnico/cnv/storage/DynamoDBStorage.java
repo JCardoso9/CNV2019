@@ -83,13 +83,13 @@ public class DynamoDBStorage{
         System.out.println("Table Description: " + tableDescription);
     }	
 
-    //Decide which metric to store
+    //Save metric in database for the request associated with the current threadID
     public static void storeMetricsGathered(long threadID, long metric){
         System.out.println("Storing in db...");
         try{
     	Request correspondingRequest = requestInformation.get(threadID);
     	RequestMapping mappedRequest = mapper.load(RequestMapping.class, correspondingRequest.getDataset(),correspondingRequest.getRequestId());
-    	//Already exists in DB
+    	//Doesn't exist in DB yet
     	if (mappedRequest == null){
     		mappedRequest = new RequestMapping();
             System.out.println("Creating request mapping");
@@ -107,19 +107,8 @@ public class DynamoDBStorage{
         }
     }	
 
-    //Need to store the estimates for new requests aswell.
-
+   //Insert new request in map with the given threadID
     public static void setNewRequest(long threadID, Request request){
     	requestInformation.put(threadID, request);
-    }
-
-    public static List<RequestMapping> getStoredMetrics(){
-    	HashMap<String, AttributeValue> eav = new HashMap<String, AttributeValue>();
-		eav.put(":v0", new AttributeValue().withN("0"));
-    	DynamoDBScanExpression scanExpression = new DynamoDBScanExpression()
-    		.withFilterExpression("metricResult > :v0")
-    		.withExpressionAttributeValues(eav);
-
-		return mapper.scan(RequestMapping.class, scanExpression);
     }
 }

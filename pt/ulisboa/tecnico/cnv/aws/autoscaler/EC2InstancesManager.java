@@ -105,6 +105,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
     public int getClusterAvailableLoad(){
     	int totalLoadPossible = MAXIMUM_REQUEST_COMPLEXITY * ec2instances.size();
+    	if (isInstanceBeingCreated) totalLoadPossible += 10;
     	int availableClusterLoad = totalLoadPossible - calculateTotalClusterLoad();
     	return availableClusterLoad;
     }
@@ -188,8 +189,8 @@ public class EC2InstancesManager extends AbstractManagerObservable {
                 	System.out.println("Creating in manager new instance");
                 	EC2InstanceController newInstance = createInstance();
 	                System.out.println("ADDING  NEW REQUEST 1 : " + bestInstance.getInstanceID());
-	                newInstance.addNewRequest(request);
-	                return newInstance;
+	                //newInstance.addNewRequest(request);
+	                return null;
 	            } 
 	            else return null;
             }

@@ -102,27 +102,19 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
     public void run(){
         System.out.println("Starting instance...");
         scaleUp();
-        try{
+
+        /*try{
         
         Thread.sleep(20000);
         } catch (Exception e) {e.printStackTrace();}
         System.out.println("Starting 2nd instance...");
-        scaleUp();
-       /* try{
-            Thread.sleep(10000);
-            System.out.println("Starting 2nd instance...");
-            scaleUp();
-            
-            System.out.println("Terminate one");
-            Thread.sleep(40000);
-            manager.checkInstances();
-            System.out.println("Executing logic...");
-            executeAutoScalerLogic();
-        } catch (Exception e) {e.printStackTrace();}*/
+        scaleUp();*/
+       
     }
 
     public void executeAutoScalerLogic(){
         scaledUp = false;
+        System.out.println("Auto-Scaling...")
         System.out.println("Nr Of instances: " + manager.getNumberInstances());
         if(manager.getNumberInstances() < MINIMUM_NUMBER_OF_INSTANCES){
             if (!manager.isInstanceBeingCreated()) scaleUp();
@@ -155,8 +147,7 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
         int nrKilledInstances = 0;
         for (String instanceID : updatedIdleInstances){
             /*System.out.println("Instances Left: " + nrInstancesLeft);*/
-            System.out.println("Available Load is " + manager.getClusterAvailableLoad());
-            System.out.println("If instance " + instanceID + " deleted, system would have " + (manager.getClusterAvailableLoad() - manager.getAvailableLoadInstance(instanceID) ));
+            System.out.println("If instance " + instanceID + " deleted, system would have " + (manager.getClusterAvailableLoad() - nrKilledInstances * MAXIMUM_REQUEST_COMPLEXITY - manager.getAvailableLoadInstance(instanceID) ));
             if (!idleInstances.contains(instanceID) && nrInstancesLeft > MINIMUM_NUMBER_OF_INSTANCES && 
                 manager.getClusterAvailableLoad() - nrKilledInstances * MAXIMUM_REQUEST_COMPLEXITY - manager.getAvailableLoadInstance(instanceID) >= MINIMUM_LOAD_AVAILABLE){
 
@@ -183,6 +174,7 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
         if (timers.containsKey(instanceID)  && idleInstances.contains(instanceID)){
             idleInstances.remove(instanceID);
             timers.get(instanceID).cancel();
+            timers.remove(instanceID);
             manager.reActivate(instanceID);
             System.out.println("Shutdown for " + instanceID + " has been canceled");
         }

@@ -300,16 +300,6 @@ public class LoadBalancer implements Runnable{
     	private static String REGION = "region";
 
 		public MyHandler(){
-			
-			/*AWSStaticCredentialsProvider awsCredentials = new AWSStaticCredentialsProvider(new ProfileCredentialsProvider().getCredentials());
-			properties = ResourceBundle.getBundle("ec2", Locale.ENGLISH);
-
-			try{
-            checkResourceBundleKeys(properties);
-        }catch(Exception e){
-        	e.printStackTrace();
-		}
-		ec2 = AmazonEC2ClientBuilder.standard().withRegion(properties.getString(REGION)).withCredentials(awsCredentials).build();*/
 		}
 
 		@Override
@@ -339,15 +329,6 @@ public class LoadBalancer implements Runnable{
 	private static void UpdateMaxMetricAndCache(String requestId, String requestDataset){
 		try{
 			RequestMapping mapping = mapper.load(RequestMapping.class, requestDataset, requestId);
-
-			/*Map<String, AttributeValue> eav = new HashMap<String, AttributeValue>();
-	        eav.put(":dataset", new AttributeValue().withS(requestDataset));
-	        eav.put(":id", new AttributeValue().withS(requestId));
-
-			DynamoDBQueryExpression<RequestMapping> queryExpression = new DynamoDBQueryExpression<RequestMapping>() 
-			    .withKeyConditionExpression("Dataset = :dataset and RequestId = :id")
-			    .withExpressionAttributeValues(eav);
-			List<RequestMapping> mapping = mapper.query(RequestMapping.class, queryExpression);*/
 
 			if (mapping != null){
 				if (lastMappings.get(requestDataset) == null){

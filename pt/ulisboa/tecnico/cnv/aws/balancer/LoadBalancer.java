@@ -33,7 +33,7 @@ import java.net.HttpURLConnection;
 import java.lang.Runnable;
 
 public class LoadBalancer implements Runnable{
-	private static final int balancerPort = 8001;
+	private static final int balancerPort = 8000;
 	private static LoadBalancer loadBalancer;
 	private static DynamoDBMapper mapper;
 	private static double maxMetric = 0;

@@ -130,6 +130,6 @@ public class RequestMapping{
 
 	@Override
 	public String toString(){
-		return this.getX0() + " " + this.getX1() + " " + this.getY0() + " " + this.getY1() + " " + this.getXs() + " " + this.getYs() + " " + this.getDataset() + " " + this.getStrategy() + " " + this.getMetrics() + " " + this.getRequestId();
+		return "X0: " + this.getX0() + "  X1 : " + this.getX1() + "  Y0: " + this.getY0() + " Y1: " + this.getY1() + " Xs: " + this.getXs() + " Ys : " + this.getYs() + " Dataset : " + this.getDataset() + " Strategy : " + this.getStrategy() + " Metrics : " + this.getMetrics() + " ID : " + this.getRequestId();
 	}
 }

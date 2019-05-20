@@ -153,8 +153,16 @@ public class LoadBalancer implements Runnable{
 		if (lastMappings.get(request.getDataset()) != null){
 			for (RequestMapping mapping : lastMappings.get(request.getDataset())){
 				System.out.println("In cache, mapping : " + mapping.toString());
+				System.out.println("In cache, request : " + request.toString());
+				System.out.println(mapping.getX0() == request.getX0());
+				System.out.println(mapping.getY0() == request.getY0());
+				System.out.println(mapping.getX1() == request.getX1());
+				System.out.println(mapping.getY1() == request.getY1());
+				System.out.println(mapping.getStrategy().equals(request.getStrategy()));
+				System.out.println(mapping.getXs() == request.Xs());
+				System.out.println(mapping.getYs() == request.Ys());
 				if (mapping.getX0() == request.getX0() && mapping.getX1() == request.getX1() && mapping.getXs() == request.Xs() && mapping.getYs() == request.Ys() &&
-					mapping.getY0() == request.getY0() && mapping.getY1() == request.getY1() && mapping.getStrategy() == request.getStrategy()){
+					mapping.getY0() == request.getY0() && mapping.getY1() == request.getY1() && mapping.getStrategy().equals(request.getStrategy())){
 					request.setEstimatedCost((long)Math.round((mapping.getMetrics()/maxMetric)*n));
 					System.out.println("Found same request in cache, cost : " + request.getEstimatedCost());
 					return true;
@@ -175,7 +183,7 @@ public class LoadBalancer implements Runnable{
 				System.out.println("Found stuff in database");
 				for (RequestMapping mapping : mappingList){
 					if (mapping.getX0() == request.getX0() && mapping.getX1() == request.getX1() && mapping.getY0() == request.getY0()
-						&& mapping.getY1() == request.getY1() && mapping.getXs() == request.Xs()){
+						&& mapping.getY1() == request.getY1() && mapping.getXs() == request.Xs() && mapping.getYs() == request.Ys() && mapping.getStrategy().equals(request.getStrategy())){
 						if (maxMetric < mapping.getMetrics()){
 							maxMetric = mapping.getMetrics();
 						}
@@ -334,6 +342,16 @@ public class LoadBalancer implements Runnable{
 			System.out.println("Request id : " + requestId);
 			System.out.println("Request Dataset : " + requestDataset);
 			RequestMapping mapping = mapper.load(RequestMapping.class, requestDataset, requestId);
+
+			/*Map<String, AttributeValue> eav = new HashMap<String, AttributeValue>();
+	        eav.put(":dataset", new AttributeValue().withS(requestDataset));
+	        eav.put(":id", new AttributeValue().withS(requestId));
+
+			DynamoDBQueryExpression<RequestMapping> queryExpression = new DynamoDBQueryExpression<RequestMapping>() 
+			    .withKeyConditionExpression("Dataset = :dataset and RequestId = :id")
+			    .withExpressionAttributeValues(eav);
+			List<RequestMapping> mapping = mapper.query(RequestMapping.class, queryExpression);*/
+
 			System.out.println("Pls mapper");
 			if (mapping != null){
 				System.out.println("YEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE");
@@ -352,6 +370,7 @@ public class LoadBalancer implements Runnable{
 				}
 				if(mapping.getMetrics() > maxMetric){
 					maxMetric = mapping.getMetrics();
+					System.out.println("New Max Metric : " + maxMetric);
 				}
 			}
 		}catch(DynamoDBMappingException e){

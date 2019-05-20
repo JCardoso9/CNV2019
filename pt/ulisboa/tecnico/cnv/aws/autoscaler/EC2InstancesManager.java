@@ -32,8 +32,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
     private HashMap<String, EC2InstanceController> ec2instances = new HashMap<String, EC2InstanceController>();
     private HashMap<String, Integer> ec2InstancesHealth = new HashMap<String, Integer>();
-/*    private HashMap<String, Integer> ec2instancesLoads = new HashMap<String, Integer>();
-*/
+
 
     private static final Comparator<EC2InstanceController> instanceComparator = new Comparator<EC2InstanceController>() {
         @Override
@@ -64,21 +63,15 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     public void addInstance(EC2InstanceController instance){
     	isInstanceBeingCreated = false;
         ec2instances.put(instance.getInstanceID(), instance);
-/*        ec2instancesLoads.put(instance.getInstanceID(), 0);
-*/    }
+    }
 
     public void removeInstance(EC2InstanceController instance){
         ec2instances.remove(instance.getInstanceID());
-/*        ec2instancesLoads.remove(instance.getInstanceID());     
-*/    }
+    }
 
 
     public List<String> getIdleInstances(){
     	List<String> idleInstances = new ArrayList<String>();
-    	/*for (String instanceID : ec2instancesLoads.keySet()){
-            if (ec2instancesLoads.get(instanceID) == 0)
-            	idleInstances.add(instanceID);
-        }*/
         for (EC2InstanceController instance : ec2instances.values()){
         	if (instance.getLoad() == 0) {
         		idleInstances.add(instance.getInstanceID());
@@ -92,9 +85,6 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
     public int calculateTotalClusterLoad(){
     	int totalClusterLoad = 0;
-        /*for (int load : ec2instancesLoads.values()){
-            totalClusterLoad += load;
-        }*/
         for (EC2InstanceController instance : ec2instances.values()){
         	totalClusterLoad += instance.getLoad();
         }
@@ -151,6 +141,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     	ec2instances.get(instanceID).reActivate();
     }
 
+   //Decide the best instance given the incoming request
     public synchronized EC2InstanceController getInstanceWithSmallerLoad(Request request){
         System.out.println("Getting best request");
     	ArrayList<EC2InstanceController> instances = new ArrayList<EC2InstanceController>(ec2instances.values());
@@ -166,6 +157,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
             while (bestInstance.isMarkedForShutdown() && bestIndex < instances.size()){
                 bestIndex++;
                 if (bestIndex == instances.size()){
+			//No suitable instances found
                     bestInstance = null;
                     break;
                 }
@@ -175,6 +167,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
             }
             if (idleInstances.size() != 0){
                 if (bestInstance == null || bestInstance.getLoad() > 0){
+			//Idle instance is better suited to solve the request, remove shutdown mark
                     bestInstance = ec2instances.get(idleInstances.get(0));
                     if (bestInstance.isMarkedForShutdown()) EC2AutoScaler.getInstance().quitShutdownProcedure(bestInstance.getInstanceID());
                 }
@@ -183,13 +176,11 @@ public class EC2InstancesManager extends AbstractManagerObservable {
                 return null;
             }
             if (bestInstance.getLoad() + request.getEstimatedCost() > EC2AutoScaler.MAXIMUM_REQUEST_COMPLEXITY){
-                //Should be through auto scaler
 
                 if (!isInstanceBeingCreated) {
                 	System.out.println("Creating in manager new instance");
                 	EC2InstanceController newInstance = createInstance();
 	                System.out.println("ADDING  NEW REQUEST 1 : " + bestInstance.getInstanceID());
-	                //newInstance.addNewRequest(request);
 	                return null;
 	            } 
 	            else return null;
@@ -205,7 +196,6 @@ public class EC2InstancesManager extends AbstractManagerObservable {
         if (ec2instances.containsKey(instanceID)){
             EC2InstanceController instance = ec2instances.get(instanceID);
             instance.removeRequest(request);
-            //Notify auto scaler;
         }
     }
 
@@ -250,7 +240,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 
 
     class HealthCheckCreator implements Runnable {
-
+	
         public void run() {
             Timer timer = new Timer();
        		timer.schedule(new RunHealthCheckTimer(), SECONDS_BETWEEN_HEALTH_CHECKS * 1000, SECONDS_BETWEEN_HEALTH_CHECKS * 1000);

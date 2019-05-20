@@ -114,7 +114,7 @@ public class EC2AutoScaler extends AbstractAutoScalerObserver implements Runnabl
 
     public void executeAutoScalerLogic(){
         scaledUp = false;
-        System.out.println("Auto-Scaling...")
+        System.out.println("Auto-Scaling...");
         System.out.println("Nr Of instances: " + manager.getNumberInstances());
         if(manager.getNumberInstances() < MINIMUM_NUMBER_OF_INSTANCES){
             if (!manager.isInstanceBeingCreated()) scaleUp();

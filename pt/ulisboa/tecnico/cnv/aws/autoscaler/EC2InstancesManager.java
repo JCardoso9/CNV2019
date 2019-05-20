@@ -21,7 +21,7 @@ public class EC2InstancesManager extends AbstractManagerObservable {
 	static EC2InstancesManager  instance;
 
 	int MAXIMUM_FAILED_HEALTH_CHECKS = 3;
-	int SECONDS_BETWEEN_HEALTH_CHECKS = 40;
+	int SECONDS_BETWEEN_HEALTH_CHECKS = 20;
 	int FIRST_HEALTH_CHECK = 20;
 	int MAXIMUM_REQUEST_COMPLEXITY = 10;
 
@@ -219,7 +219,10 @@ public class EC2InstancesManager extends AbstractManagerObservable {
     }
 
     public synchronized void  updateHealthInstance(String instanceID, boolean healthy){
-    	if (!ec2InstancesHealth.containsKey(instanceID)) ec2InstancesHealth.put(instanceID,0);
+    	if (!ec2InstancesHealth.containsKey(instanceID)) {
+    		if (healthy) ec2InstancesHealth.put(instanceID, 0);
+    		else ec2InstancesHealth.put(instanceID, 1);
+   		}
 
     	else {
 	    	int nrFailedChecks = ec2InstancesHealth.get(instanceID);

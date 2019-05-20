@@ -338,7 +338,7 @@ public class LoadBalancer implements Runnable{
 				}
 				else{
 					ArrayList<RequestMapping> mappings = lastMappings.get(requestDataset);
-					if (mappings.size() == 5){
+					if (mappings.size() == 10){
 						mappings.remove(0);
 					}
 					mappings.add(mapping);

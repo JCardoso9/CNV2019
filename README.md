@@ -1,6 +1,6 @@
 # CNV-2019 
  
-This project was done in collaboration with @mariojcc and @LuisLoureiro for the cloud computation an virtualization course during my Informatics and Computer Engineering Masters specializing in Intelligent Systems and Data Analysis and Processing at IST.
+This project was done in collaboration with @mariojcc and @LuisLoureiro for the cloud computation and virtualization course during my Informatics and Computer Engineering Masters specializing in Intelligent Systems and Data Analysis and Processing at IST.
  
 ## Introduction
 The goal of the CCV project is to design and develop an elastic cluster of web servers that is able to execute a simple e-science related function: to ﬁnd the maximum value on simpliﬁed height-maps (maps), representing elevations with colours, on-demand, by executing a set of search/exploration algorithms (serving as a demonstrator of CPU-intensive processing). The system will receive a stream of web requests from users. Each request is for ﬁnding the maximum on a given map, providing the coordinates of the start position and a search rectangle within the height-map. In the end, it displays the height-map and the computed path (in gray-scale) to reach the maximum, using hill-climbing.
